@@ -157,26 +157,25 @@ ConceptManager.prototype.addRdfType = function (conceptId, typeId, options) {
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
-
     return $.post(this.host + "/MorphemeApi/AddRdfType/" + conceptId, { stype: Nagu.MType.Concept, typeId: typeId, appId: opts.appId });
-}
+};
 
-function getConcept(id) {
-    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
-    if (Morphemes[id] === undefined) {
-        $.getJSON("/ConceptApi/Get/" + id).done(function (concept) {
-            Morphemes[id] = concept;
-            dtd.resolve(concept);
-        }).fail(function () {
-            alert('getConcept失败');
-            dtd.reject();
-        });
-    }
-    else {
-        dtd.resolve(Morphemes[id]);
-    }
-    return dtd.promise(); // 返回promise对象
-}
+//function getConcept(id) {
+//    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+//    if (Morphemes[id] === undefined) {
+//        $.getJSON("/ConceptApi/Get/" + id).done(function (concept) {
+//            Morphemes[id] = concept;
+//            dtd.resolve(concept);
+//        }).fail(function () {
+//            alert('getConcept失败');
+//            dtd.reject();
+//        });
+//    }
+//    else {
+//        dtd.resolve(Morphemes[id]);
+//    }
+//    return dtd.promise(); // 返回promise对象
+//}
 
 
 
@@ -194,23 +193,41 @@ function StatementManager(host) {
     if (host == null || host === undefined) this.host = "";
     else this.host = host;
 }
-StatementManager.prototype.create = createStatement;
-StatementManager.prototype.findBySP = findBySP;
-StatementManager.prototype.findByPO = findByPO;
-StatementManager.prototype.get = function (id) {
+StatementManager.prototype.create = function(subjectId, stype, predicateId, object, otype) {
+    return $.post("/StatementApi/Create",
+    {
+        subjectId: subjectId,
+        stype: stype,
+        predicateId: predicateId,
+        object: object,
+        otype: otype
+    });
+};
+StatementManager.prototype.findBySP = function (subject, stype, predicate, options) {
+    var defaults = {
+        appId: "00000000-0000-0000-0000-000000000000"
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
-    if (Statments[id] === undefined) {
-        $.post(this.host + "/StatementApi/Get/" + id).done(function (fs) {
-            Statments[id] = fs;
-            dtd.resolve(fs);
+    var cacheKey = 'sub_' + subject + '_pre_' + predicate + '_appId_' + opts.appId; 
+    if (Statments[cacheKey] === undefined) {
+        $.post(host + "/MorphemeApi/FindBySP/" + subject,
+        {
+            stype: stype,
+            predicateId: predicate,
+            appId: opts.appId
+        }).done(function (fss) {
+            Statments[cacheKey] = fss;
+            dtd.resolve(fss);
         }).fail(function () { dtd.reject(); });
     } else {
-        dtd.resolve(Statments[id]);
+        dtd.resolve(Statments[cacheKey]);
     }
     return dtd.promise();
 };
-
-function findByPO(predicateId, objectId, oType, options) {
+StatementManager.prototype.findByPO = function (predicateId, objectId, oType, options) {
     var defaults = {
         appId: "00000000-0000-0000-0000-000000000000"
     };
@@ -233,18 +250,23 @@ function findByPO(predicateId, objectId, oType, options) {
         dtd.resolve(Statments[cacheKey]);
     }
     return dtd.promise();
-}
+};
+StatementManager.prototype.get = function (id) {
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    if (Statments[id] === undefined) {
+        $.post(this.host + "/StatementApi/Get/" + id).done(function (fs) {
+            Statments[id] = fs;
+            dtd.resolve(fs);
+        }).fail(function () { dtd.reject(); });
+    } else {
+        dtd.resolve(Statments[id]);
+    }
+    return dtd.promise();
+};
 
-function createStatement(subjectId, stype, predicateId,  object,otype) {
-    return $.getJSON("/StatementApi/Create",
-    {
-        subjectId: subjectId,
-        stype: stype,
-        predicateId: predicateId,
-        object: object,
-        otype: otype
-    });
-}
+
+
+
 
 function pagedByPO(predicateId, objectId, otype, start, count) {
     return $.getJSON("/StatementApi/PagedByPO/" + predicateId,
@@ -263,22 +285,7 @@ function searchWithType(fn, type) {
     });
 }
 
-function findBySP(subject, stype, predicate) {
-    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
-    if (Statments['sub_' + subject + '_pre_' + predicate] === undefined) {
-        $.getJSON(host + "/MorphemeApi/FindBySP/" + subject,
-        {
-            stype: stype,
-            predicateId: predicate
-        }).done(function (fss) {
-            Statments['sub_' + subject + '_pre_' + predicate] = fss;
-            dtd.resolve(fss);
-        }).fail(function () { dtd.reject(); });
-    } else {
-        dtd.resolve(Statments['sub_' + subject + '_pre_' + predicate]);
-    }
-    return dtd.promise();
-}
+
 
 
 

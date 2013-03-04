@@ -212,7 +212,8 @@ function renderMorpheme2(morpheme, ph) {
 }
 
 function renderConcept4(cid, ph) {
-    return getConcept(cid).done(function (c) {
+    var cm = new ConceptManager();
+    return cm.get(cid).done(function (c) {
         ph.append(newA().text(c.FriendlyNames[0]));
     });
 }
@@ -440,3 +441,66 @@ $.fn.conceptShow = function (conceptId, options) {
         }
     });
 };
+
+$.fn.conceptInfoFromTypes = function (conceptId, options) {
+    var defaults = {
+        clearBefore: true
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+    var div = $(this);
+
+
+
+    // 1. 获取全部类型:
+    var sm = new StatementManager();
+    sm.findBySP(conceptId, Nagu.MType.Concept, Nagu.Concepts.RdfType, { appId: opts.appId }).done(function (fss) {
+        // 2. 循环显示每一个类型:
+        $.each(fss, function (i, fs) {
+            // 3. 显示类型标题:
+            var cm = new ConceptManager();
+            cm.get(fs.Object.ConceptId).done(function (type) {
+                var h3 = newTag("h3", { text: type.FriendlyNames[0] + '· · · · · ·' });
+                div.append(h3);
+            });
+        });
+    });
+    return div;
+};
+
+
+/******* AddTypeDialog 类 ******************************************************************************************************************/
+function AddTypeDialog(options) {
+    var defaults = {
+        host: "",
+        appId: "00000000-0000-0000-0000-000000000000",
+        templateUrl: "/Apps/private/dialog/addType.html",
+        onTypeAdded: function (fs) { }
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+    AddTypeDialog.prototype.onTypeAdded = this.opts.onTypeAdded;
+};
+
+AddTypeDialog.prototype.setOptions = function(options){
+    this.opts = $.extend(this.opts, options);
+}
+
+AddTypeDialog.prototype.init = function () {
+    return $.get(this.opts.templateUrl).done(function (html) {
+        $('body').append(html);
+    });
+};
+
+AddTypeDialog.prototype.toggle = function (subjectId, stype) {
+    $('#dlgAddType').attr('subjectId', subjectId);
+    $('#dlgAddType').attr('stype', stype);
+    $('#dlgAddType').attr('appId', this.opts.appId);
+
+    $('#dlgAddType').modal('toggle');
+};
+
+AddTypeDialog.prototype.hide = function () {
+    $('#dlgAddType').modal('hide');
+}
+AddTypeDialog.prototype.onTypeAdded = function (fs) { };

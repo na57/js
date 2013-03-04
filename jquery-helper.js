@@ -38,3 +38,21 @@ function newDd(id) {
 function newDiv(id) {
     return $("<div></div>").attr("id", id);
 }
+
+function newTag(name, options) {
+    var defaults = {
+        id: "",
+        text: "",
+        class: ""
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    var e = $('<' + name + '></' + name + '>');
+
+    if (opts.id != "") e.attr('id', opts.id);
+    if (opts.text != "") e.text(opts.text);
+    if (opts.class != "") e.addClass(opts.class);
+
+    return e;
+}
