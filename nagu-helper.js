@@ -1,22 +1,22 @@
-﻿var RESOURCE = 0;
-var LITERAL = 1;
-var STATEMENT = 2;
-var CONCEPT = 1025;
-var CONCEPT_DB = 1026;
+﻿//var RESOURCE = 0;
+//var LITERAL = 1;
+//var STATEMENT = 2;
+//var CONCEPT = 1025;
+//var CONCEPT_DB = 1026;
 
-var MorphemeType = {
-    Resource: 0,
-    Literal: 1,
-    Statement: 2,
-    Concept: 1025,
-    ConceptDb: 1026
-};
+//var MorphemeType = {
+//    Resource: 0,
+//    Literal: 1,
+//    Statement: 2,
+//    Concept: 1025,
+//    ConceptDb: 1026
+//};
 
-var NaguConcepts = {
-    RdfType: "4c5b16cd-d526-48cb-948e-250ce21facc8",
-    OwlClass: "280ab0ee-7fda-4d29-9a0e-eed7850fe3b2",
-    NaguFormatString: "0d83e5fd-eec0-4ea2-951e-38f13d57083f"
-};
+//var NaguConcepts = {
+//    RdfType: "4c5b16cd-d526-48cb-948e-250ce21facc8",
+//    OwlClass: "280ab0ee-7fda-4d29-9a0e-eed7850fe3b2",
+//    NaguFormatString: "0d83e5fd-eec0-4ea2-951e-38f13d57083f"
+//};
 
 /****************************************************基础类:Nagu******************************************************************/
 
@@ -52,8 +52,8 @@ Statements['sub_xxxx_pre_xxxx_obj_xxx']: 分别指定ID查询到的结果。
 var Statments = new Array();
 
 
-
-
+// 用于缓存从类型中取得的数据
+var PvsFromBaseClass = new Array();
 
 
 
@@ -128,7 +128,7 @@ ConceptManager.prototype.get = function (id) {
 }
 ConceptManager.prototype.create = function (fn, desc, options) {
     var defaults = {
-        id: null,
+        id: "",
         appId: "00000000-0000-0000-0000-000000000000"
     };
     // Extend our default options with those provided.    
@@ -136,7 +136,7 @@ ConceptManager.prototype.create = function (fn, desc, options) {
 
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象    
-    if (opts.id == null) {
+    if (opts.id === undefined || opts.id == null || opts.id == "") {
         $.post(this.host + "/ConceptApi/Create/", { fn: fn, desc: desc, appId: opts.appId }).done(function (c) {
             ConceptManager.ConceptCache[c.ConceptId] = c;
             dtd.resolve(c);
@@ -160,33 +160,33 @@ ConceptManager.prototype.addRdfType = function (conceptId, typeId, options) {
     return $.post(this.host + "/MorphemeApi/AddRdfType/" + conceptId, { stype: Nagu.MType.Concept, typeId: typeId, appId: opts.appId });
 };
 
-//function getConcept(id) {
-//    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
-//    if (Morphemes[id] === undefined) {
-//        $.getJSON("/ConceptApi/Get/" + id).done(function (concept) {
-//            Morphemes[id] = concept;
-//            dtd.resolve(concept);
-//        }).fail(function () {
-//            alert('getConcept失败');
-//            dtd.reject();
-//        });
-//    }
-//    else {
-//        dtd.resolve(Morphemes[id]);
-//    }
-//    return dtd.promise(); // 返回promise对象
-//}
-
-
-
-
-
-function addRdfType(subjectId, stype, typeId, afterAdded) {
-    if (afterAdded == null) {
-        return $.getJSON("/MorphemeApi/AddRdfType/" + subjectId + "?stype=" + stype + "&typeId=" + typeId);
+ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, propertyId, objectFn, objectId, onPropertyValueAdded) {
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象   
+    var sm = new StatementManager();
+    if (objectId != "" && objectId != null) {
+        return sm.create(subject, stype, propertyId, objectId, Nagu.MType.Concept);
     }
-    $.getJSON("/MorphemeApi/AddRdfType/" + subjectId + "?stype=" + stype + "&typeId=" + typeId, afterAdded);
-}
+    else if (objectFn != "") {
+        if (window.confirm("还未选定一个Concept作为值，您可以返回重新搜索Concept，或创建新的Concept作为值。\r\n您确定要创建名称为“" + objectFn + "”的新的Concept并作为值吗？")) {
+            var objectDesc = prompt("请输入关于\"" + objectFn + "\"的描述信息：");
+            createConcept(objectFn, objectDesc).done(function (newc) {
+                sm.create(subject, stype, propertyId, newc.ConceptId, Nagu.MType.Concept).done(function (fs) { dtd.resolve(fs); });
+            });
+        }
+        return dtd.promise();
+    }
+};
+
+
+
+
+
+//function addRdfType(subjectId, stype, typeId, afterAdded) {
+//    if (afterAdded == null) {
+//        return $.getJSON("/MorphemeApi/AddRdfType/" + subjectId + "?stype=" + stype + "&typeId=" + typeId);
+//    }
+//    $.getJSON("/MorphemeApi/AddRdfType/" + subjectId + "?stype=" + stype + "&typeId=" + typeId, afterAdded);
+//}
 
 /***Statement操作*****************************************************************************************************************************/
 function StatementManager(host) {
@@ -297,10 +297,23 @@ function findSByPO(predicateId, objectId, oType) {
     });
 }
 
+
+
+
 function propertyValuesFormBaseClass(subject, sType, rdfType) {
-    return $.getJSON(host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + subject,
-    {
-        mtype: sType,
-        rdfType: rdfType
-    });
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    var cacheKey = 'subject_' + subject + '_rdfType_' + rdfType;
+    if (PvsFromBaseClass[cacheKey] === undefined) {
+        $.getJSON(host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + subject,
+        {
+            mtype: sType,
+            rdfType: rdfType
+        }).done(function (pvs) {
+            PvsFromBaseClass[cacheKey] = pvs;
+            dtd.resolve(pvs);
+        });
+    } else {
+        dtd.resolve(PvsFromBaseClass[cacheKey]);
+    }
+    return dtd.promise();
 }

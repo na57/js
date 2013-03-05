@@ -60,10 +60,10 @@ function onShowValueAsStatement(dl, property, values) {
     var cm = new ConceptManager();
     cm.get(property).done(function (p) {
         dt.append(newA().text(p.FriendlyNames[0]).click(function () {
-            $('#dlgAddValue').attr('propertyId', p.ConceptId);
-            $('#dlgAddValue').find('h3').text('为属性“' + p.FriendlyNames[0] + '”添加属性值');
-            $("#dlgAddValue .alert-error").hide();
-            $('#dlgAddValue').modal('toggle');
+            $('#dlgAddPropertyValue').attr('propertyId', p.ConceptId);
+            $('#dlgAddPropertyValue').find('h3').text('为属性“' + p.FriendlyNames[0] + '”添加属性值');
+            $("#dlgAddPropertyValue .alert-error").hide();
+            $('#dlgAddPropertyValue').modal('toggle');
         }));
     });
     if (values.length == 0) {
@@ -413,60 +413,7 @@ $.fn.statementList = function (statements, options) {
     return dtd.promise();
 };
 
-$.fn.conceptShow = function (conceptId, options) {
-    var defaults = {
-        clearBefore: true
-    };
-    // Extend our default options with those provided.    
-    var opts = $.extend(defaults, options);
-    var div = $(this);
 
-    var cm = new ConceptManager();
-    return cm.get(conceptId).done(function (concept) {
-        if (opts.clearBefore) div.empty();
-        // 显示所有FriendlyName:
-        if (concept.FriendlyNames.length > 0) {
-            div.append(newDt().text('名称'));
-            for (var i = 0; i < concept.FriendlyNames.length; i++) { //此处无法使用$.each,why?
-                div.append(newDd().text(concept.FriendlyNames[i]));
-            }
-        }
-
-        // 显示所有Description:
-        if (concept.Descriptions.length > 0) {
-            div.append(newDt().text('简介'));
-            for (var i = 0; i < concept.Descriptions.length; i++) {
-                div.append(newDd().text(concept.Descriptions[i]));
-            }
-        }
-    });
-};
-
-$.fn.conceptInfoFromTypes = function (conceptId, options) {
-    var defaults = {
-        clearBefore: true
-    };
-    // Extend our default options with those provided.    
-    var opts = $.extend(defaults, options);
-    var div = $(this);
-
-
-
-    // 1. 获取全部类型:
-    var sm = new StatementManager();
-    sm.findBySP(conceptId, Nagu.MType.Concept, Nagu.Concepts.RdfType, { appId: opts.appId }).done(function (fss) {
-        // 2. 循环显示每一个类型:
-        $.each(fss, function (i, fs) {
-            // 3. 显示类型标题:
-            var cm = new ConceptManager();
-            cm.get(fs.Object.ConceptId).done(function (type) {
-                var h3 = newTag("h3", { text: type.FriendlyNames[0] + '· · · · · ·' });
-                div.append(h3);
-            });
-        });
-    });
-    return div;
-};
 
 
 /******* AddTypeDialog 类 ******************************************************************************************************************/
@@ -504,3 +451,247 @@ AddTypeDialog.prototype.hide = function () {
     $('#dlgAddType').modal('hide');
 }
 AddTypeDialog.prototype.onTypeAdded = function (fs) { };
+
+/******* AddPropertyValueDialog 类 ******************************************************************************************************************/
+function AddPropertyValueDialog(options) {
+    var defaults = {
+        host: "",
+        appId: "00000000-0000-0000-0000-000000000000",
+        templateUrl: "/Apps/private/dialog/addPropertyValue.html",
+        dialogId: "dlgAddPropertyValue",
+        fnId: "txtFn",
+        valueId: "txtValue"
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+};
+
+AddPropertyValueDialog.prototype.setOptions = function (options) {
+    this.opts = $.extend(this.opts, options);
+};
+
+AddPropertyValueDialog.prototype.init = function () {
+    var dialogId = this.opts.dialogId;
+    var txtFnId = this.opts.fnId;
+    var txtValueId = this.opts.valueId;
+    return $.get(this.opts.templateUrl).done(function (html) {
+        html = html.replace(/{dlgAddPropertyValue}/g, dialogId);
+        html = html.replace(/{txtFn}/g, txtFnId);
+        html = html.replace(/{txtValue}/g, txtValueId);
+        $('body').append(html);
+    });
+};
+
+AddPropertyValueDialog.prototype.toggle = function (subjectId, stype, predicateId) {
+    var div = $('#' + this.opts.dialogId);
+    div.attr('subjectId', subjectId).attr('stype', stype).attr('predicated', predicateId).attr('appId', this.opts.appId);
+    div.modal('toggle');
+};
+
+AddPropertyValueDialog.prototype.hide = function () {
+    $('#' + this.opts.dialogId).modal('hide');
+}
+
+/******* ConceptDetailPanel 类 ***********************************************************************************************************************************/
+function ConceptDetailPanel(conceptId, options) {
+    this.conceptId = conceptId;
+    var defaults = {
+        host: "",
+        appId: "00000000-0000-0000-0000-000000000000",
+        templateUrl: "/Apps/private/dialog/addPropertyValue.html",
+        dialogId: "dlgAddPropertyValue",
+        fnId: "txtFn",
+        valueId: "txtValue",
+        clearBefore: true,
+        renderFnDesc: function (placeHolder, concept, value) {
+            placeHolder.text(value);
+        },
+        createValueHolder: function () {
+            return newDd();
+        },
+        renderFnValues: function (placeHolder, fns, concept) {
+            for (var i = 0; i < fns.length; i++) { //此处无法使用$.each,why?
+                placeHolder.append(newDd().text(fns[i]));
+            }
+        }
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+}
+
+ConceptDetailPanel.prototype.show = function (placeHolder) {
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象    
+    if (this.opts.clearBefore) placeHolder.empty();
+    var divInfo = newDiv("conceptInfo_" + Math.round(Math.random() * 100000000000));
+    var divTypes = newDiv("conceptInfoFromTypes_" + Math.round(Math.random() * 10000000000));
+    placeHolder.append(divInfo).append(divTypes);
+    
+    // 1. 显示基本信息
+    divInfo.conceptShow(this.conceptId,
+    {
+        renderFnValues: this.opts.renderFnValues
+    });
+
+    // 2. 依次显示每个类型的信息
+    divTypes.conceptInfoFromTypes(this.conceptId);
+}
+
+
+$.fn.conceptShow = function (conceptId, options) {
+    var defaults = {
+        clearBefore: true,
+        renderFnDesc: function (placeHolder, concept, value) {
+            placeHolder.text(value);
+        },
+        createValueHolder: function () {
+            return newDd();
+        },
+        renderFnValues: function (placeHolder, fns, concept) {
+            for (var i = 0; i < fns.length; i++) { //此处无法使用$.each,why?
+                placeHolder.append(newDd().text(fns[i]));
+            }
+        }
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+    var div = $(this);
+
+    var dl = newTag("dl", { class: "dl-horizontal" });
+    div.append(newTag("h3", { text: '基本信息 · · · · · ·' })).append(dl);
+    var cm = new ConceptManager();
+
+    return cm.get(conceptId).done(function (concept) {
+        // 显示所有FriendlyName:
+        if (concept.FriendlyNames.length > 0) {
+            var btn = newA().text('名称').click(function () {
+                createConceptDialog.toggle(concept.ConceptId, { h3: '为"' + concept.FriendlyNames[0] + '"添加新的名称或简介' });
+            });
+            dl.append(newDt().append(btn));
+            opts.renderFnValues(dl, concept.FriendlyNames, concept);
+        }
+
+        // 显示所有Description:
+        if (concept.Descriptions.length > 0) {
+            var btn = newA().text('简介').click(function () {
+                createConceptDialog.toggle(concept.ConceptId, { h3: '为"' + concept.FriendlyNames[0] + '"添加新的名称或简介' });
+            });
+
+            dl.append(newDt().append(btn));
+            for (var i = 0; i < concept.Descriptions.length; i++) {
+                var valueHolder = opts.createValueHolder();
+                dl.append(valueHolder);
+                opts.renderFnDesc(valueHolder, concept, concept.Descriptions[i]);
+            }
+        }
+
+    });
+};
+
+$.fn.conceptInfoFromTypes = function (conceptId, options) {
+    var defaults = {
+        clearBefore: true,
+        appId: "00000000-0000-0000-0000-000000000000"
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+    var div = $(this);
+    if (opts.clearBefore) $(this).empty();
+
+
+    // 1. 获取全部类型:
+    var sm = new StatementManager();
+    sm.findBySP(conceptId, Nagu.MType.Concept, Nagu.Concepts.RdfType, { appId: opts.appId }).done(function (fss) {
+        // 2. 循环显示每一个类型:
+        $.each(fss, function (i, fs) {
+            // 3. 显示类型标题:
+            var cm = new ConceptManager();
+            cm.get(fs.Object.ConceptId).done(function (type) {
+                var h3 = newTag("h3", { text: type.FriendlyNames[0] + '· · · · · ·' });
+                div.append(h3);
+
+                // 4. 循环显示每个类型的属性
+                var dl = newTag("dl");
+                div.append(dl);
+                propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, fs.Object.ConceptId).done(function (pvs) {
+                    $.each(pvs, function (i, pv) {
+                        onShowValueAsStatement(dl, pv.Key, pv.Value);
+                    });
+                });
+            });
+
+        });
+    });
+    return div;
+};
+
+/******* Dialog 类 ******************************************************************************************************************/
+function Dialog(options) {
+    var defaults = {
+        host: "",
+        appId: "00000000-0000-0000-0000-000000000000",
+        templateUrl: "/Apps/private/dialog/addPropertyValue.html",
+        dialogId: "dlgAddPropertyValue",
+        fnId: "txtFn",
+        valueId: "txtValue"
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+};
+Dialog.prototype.setOptions = function (options) {
+    this.opts = $.extend(this.opts, options);
+};
+
+/******* CreateConceptDialog 类 ******************************************************************************************************************/
+
+
+
+function CreateConceptDialog(options) {
+    var defaults = {
+        host: "",
+        appId: "00000000-0000-0000-0000-000000000000",
+        templateUrl: "/Apps/private/dialog/createConcept.html",
+        dialogId: "dlgCreateConcept",
+        fnId: "tbConceptName",
+        descId: "tbConceptDesc",
+        autoInit: true,
+        h3: '创建新Concept',
+        onAdded: function (concept) { consle.log('new concept::::::::::' + concept.FriendlyNames[0]); }
+        
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+    CreateConceptDialog.prototype.OnAdded = this.opts.onAdded;
+    if (this.opts.autoInit) this.init();
+};
+CreateConceptDialog.prototype.OnAdded = function (concept) { };
+
+
+CreateConceptDialog.prototype.init = function () {
+    var dialogId = this.opts.dialogId;
+    var txtFnId = this.opts.fnId;
+    var txtValueId = this.opts.valueId;
+    return $.get(this.opts.templateUrl).done(function (html) {
+        html = html.replace(/{dlgCreateConcept}/g, dialogId);
+        html = html.replace(/{txtConceptName}/g, txtFnId);
+        html = html.replace(/{txtConceptDesc}/g, txtValueId);
+        $('body').append(html);
+    });
+};
+
+CreateConceptDialog.prototype.toggle = function (conceptId, options) {
+    // Extend our default options with those provided.
+    this.opts = $.extend(this.opts, options);
+
+    var div = $('#' + this.opts.dialogId);
+    div.find('.alert').hide();
+
+    div.attr('conceptId', conceptId);
+    div.attr('appId', this.opts.appId);
+    div.find('h3').text(this.opts.h3);
+    div.modal('toggle');
+};
+
+CreateConceptDialog.prototype.hide = function () {
+    $('#' + this.opts.dialogId).modal('hide');
+}
+
