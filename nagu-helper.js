@@ -95,6 +95,32 @@ SayManager.prototype.status = function (statementId) {
     return dtd.promise();
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /***Concept操作*****************************************************************************************************************************/
 
 function ConceptManager(host) {
@@ -169,10 +195,58 @@ ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, pro
     }
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /***Statement操作*****************************************************************************************************************************/
 function StatementManager(host) {
     if (host == null || host === undefined) this.host = "";
     else this.host = host;
+}
+
+StatementManager.StatementsCache = new Array();
+StatementManager.generateCacheKey = function (statementId, subjectId, predicateId, objectId, appId) {
+    var key = 'sid_' + statementId;
+    key += '_sub_' + subjectId;
+    key += '_pre_' + predicateId;
+    key += '_obj_' + objectId;
+    key += '_appId_' + appId;
+    return key;
+}
+
+StatementManager.prototype.flush = function (statementId, subjectId, predicateId, objectId, appId) {
+    var cacheKey = StatementManager.generateCacheKey(statementId, subjectId, predicateId, objectId, appId);
+    StatementManager.StatementsCache[cacheKey] = undefined;
 }
 StatementManager.prototype.create = function(subjectId, stype, predicateId, object, otype) {
     return $.post("/StatementApi/Create",
@@ -192,19 +266,19 @@ StatementManager.prototype.findBySP = function (subject, stype, predicate, optio
     var opts = $.extend(defaults, options);
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
-    var cacheKey = 'sub_' + subject + '_pre_' + predicate + '_appId_' + opts.appId; 
-    if (Statments[cacheKey] === undefined) {
+    var cacheKey = StatementManager.generateCacheKey('', subject, predicate, '', opts.appId);
+    if (StatementManager.StatementsCache[cacheKey] === undefined) {
         $.post(host + "/MorphemeApi/FindBySP/" + subject,
         {
             stype: stype,
             predicateId: predicate,
             appId: opts.appId
         }).done(function (fss) {
-            Statments[cacheKey] = fss;
+            Statments[StatementManager.StatementsCache] = fss;
             dtd.resolve(fss);
         }).fail(function () { dtd.reject(); });
     } else {
-        dtd.resolve(Statments[cacheKey]);
+        dtd.resolve(Statments[StatementManager.StatementsCache]);
     }
     return dtd.promise();
 };
@@ -216,34 +290,48 @@ StatementManager.prototype.findByPO = function (predicateId, objectId, oType, op
     var opts = $.extend(defaults, options);
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
-    var cacheKey = 'pre_' + predicateId + '_obj_' + objectId + '_appId_' + opts.appId;
-    if (Statments[cacheKey] === undefined) {
+    var cacheKey = StatementManager.generateCacheKey('', '', predicateId, objectId, opts.appId);
+    if (StatementManager.StatementsCache[cacheKey] === undefined) {
         $.getJSON(host + "/MorphemeApi/FindByPO/" + predicateId,
         {
             otype: oType,
             objectId: objectId,
             appId: opts.appId
         }).done(function (fss) {
-            Statments[cacheKey] = fss;
+            StatementManager.StatementsCache[cacheKey] = fss;
             dtd.resolve(fss);
         }).fail(function () { dtd.reject(); });
     } else {
-        dtd.resolve(Statments[cacheKey]);
+        dtd.resolve(StatementManager.StatementsCache[cacheKey]);
     }
     return dtd.promise();
 };
+
 StatementManager.prototype.get = function (id) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
-    if (Statments[id] === undefined) {
+    var cacheKey = StatementManager.generateCacheKey(id, '', '', '', '');
+    if (StatementManager.StatementsCache[cacheKey] === undefined) {
         $.post(this.host + "/StatementApi/Get/" + id).done(function (fs) {
-            Statments[id] = fs;
+            StatementManager.StatementsCache[cacheKey] = fs;
             dtd.resolve(fs);
         }).fail(function () { dtd.reject(); });
     } else {
-        dtd.resolve(Statments[id]);
+        dtd.resolve(StatementManager.StatementsCache[cacheKey]);
     }
     return dtd.promise();
 };
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -375,6 +375,33 @@ function toggleBtnSaidStatus(onChanged) {
     });
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*******用于显示Concept的列表******************************************************************************************************************/
 
 /*
@@ -436,11 +463,14 @@ function AddTypeDialog(options) {
         host: "",
         appId: "00000000-0000-0000-0000-000000000000",
         templateUrl: "/Apps/private/dialog/addType.html",
+        autoInit: true,
         onTypeAdded: function (fs) { }
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
     AddTypeDialog.prototype.onTypeAdded = this.opts.onTypeAdded;
+
+    if (this.opts.autoInit) this.init();
 };
 
 AddTypeDialog.prototype.setOptions = function(options){
@@ -601,7 +631,7 @@ ConceptDetailPanel.prototype.show = function (placeHolder) {
     });
 
     // 2. 依次显示每个类型的信息
-    divTypes.conceptInfoFromTypes(this.conceptId);
+    divTypes.conceptInfoFromTypes(this.conceptId, this.opts);
 }
 
 
@@ -656,12 +686,7 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
             var cm = new ConceptManager();
             // 显示属性:
             cm.get(propertyId).done(function (p) {
-                dt.append(newA().text(p.FriendlyNames[0]).click(function () {
-                    addValueDialog.toggle(subjectId, Nagu.MType.Concept, p.ConceptId,
-                    {
-                        h3: '为属性“' + p.FriendlyNames[0] + '”添加属性值'
-                    });
-                }));
+                dt.append(p.FriendlyNames[0]);
             });
             // 显示Value
             var dd = newDd();
@@ -679,6 +704,7 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
+
     var div = $(this);
     if (opts.clearBefore) $(this).empty();
 
