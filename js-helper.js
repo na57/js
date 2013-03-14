@@ -48,3 +48,7 @@ function formatJSONDate(jsonDate, format) {
     var date = new Date(parseInt(jsonDate.substr(6)));
     return date.format(format);
 }
+
+function randomInt() {
+    return Math.round(Math.random() * 10000000000000);
+}

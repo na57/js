@@ -68,37 +68,29 @@ function SayManager(host) {
 SayManager.SaidCache = new Array();
 SayManager.prototype.say = function (statementId) {
     var dtd = $.Deferred();
-    if (SayManager.SaidCache[statementId] === undefined || !SayManager.SaidCache[statementId]) {
-        $.post(this.host + "/StatementApi/Say/" + statementId).done(function () {
-            SayManager.SaidCache[statementId] = true;
-            dtd.resolve();
-        });
-    } else {
-        dtd.resolve();
-    }
+    $.post(this.host + "/StatementApi/Say/" + statementId).done(function (data) {
+        SayManager.SaidCache[statementId] = data;
+        dtd.resolve(data);
+    });
     return dtd.promise();
 };
 SayManager.prototype.dontSay = function (statementId) {
     var dtd = $.Deferred();
-    if (SayManager.SaidCache[statementId] === undefined || SayManager.SaidCache[statementId]) {
-        $.post(this.host + "/StatementApi/DontSay/" + statementId).done(function () {
-            SayManager.SaidCache[statementId] = false;
-            dtd.resolve();
-        });
-    } else {
-        dtd.resolve();
-    }
+    $.post(this.host + "/StatementApi/DontSay/" + statementId).done(function (data) {
+        SayManager.SaidCache[statementId] = data;
+        dtd.resolve(data);
+    });
     return dtd.promise();
 };
 SayManager.prototype.status = function (statementId) {
     var dtd = $.Deferred();
     if (SayManager.SaidCache[statementId] === undefined) {
         $.post(this.host + "/StatementApi/GetSaidStatus/" + statementId).done(function (data) {
-            SayManager.SaidCache[statementId] = data.HasSaid;
-            dtd.resolve(statementId, SayManager.SaidCache[statementId]);
+            SayManager.SaidCache[statementId] = data;
+            dtd.resolve(data);
         });
     } else {
-        dtd.resolve(statementId, SayManager.SaidCache[statementId]);
+        dtd.resolve(SayManager.SaidCache[statementId]);
     }
     return dtd.promise();
 };
@@ -176,17 +168,6 @@ ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, pro
         return dtd.promise();
     }
 };
-
-
-
-
-
-//function addRdfType(subjectId, stype, typeId, afterAdded) {
-//    if (afterAdded == null) {
-//        return $.getJSON("/MorphemeApi/AddRdfType/" + subjectId + "?stype=" + stype + "&typeId=" + typeId);
-//    }
-//    $.getJSON("/MorphemeApi/AddRdfType/" + subjectId + "?stype=" + stype + "&typeId=" + typeId, afterAdded);
-//}
 
 /***Statement操作*****************************************************************************************************************************/
 function StatementManager(host) {
