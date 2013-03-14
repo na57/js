@@ -187,7 +187,7 @@ ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, pro
     else if (objectFn != "") {
         if (window.confirm("还未选定一个Concept作为值，您可以返回重新搜索Concept，或创建新的Concept作为值。\r\n您确定要创建名称为“" + objectFn + "”的新的Concept并作为值吗？")) {
             var objectDesc = prompt("请输入关于\"" + objectFn + "\"的描述信息：");
-            createConcept(objectFn, objectDesc).done(function (newc) {
+            this.create(objectFn, objectDesc).done(function (newc) {
                 sm.create(subject, stype, propertyId, newc.ConceptId, Nagu.MType.Concept).done(function (fs) { dtd.resolve(fs); });
             });
         }

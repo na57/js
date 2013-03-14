@@ -224,7 +224,8 @@ function renderLiteral(literal, ph) {
 
 
 function renderStatement(statement, ph) {
-    return findBySP(statement.Predicate.ConceptId, Nagu.MType.Concept, Nagu.Concepts.NaguFormatString).done(function (fs) {
+    var sm = new StatementManager();
+    return sm.findBySP(statement.Predicate.ConceptId, Nagu.MType.Concept, Nagu.Concepts.NaguFormatString).done(function (fs) {
         var phSubid = 'sub_' + randomInt();
         var phPreId = 'pre_' + randomInt();
         var phObjId = 'obj_' + randomInt();
@@ -533,12 +534,14 @@ function AddPropertyValueDialog(options) {
         dialogId: "dlgAddPropertyValue",
         fnId: "txtFn",
         valueId: "txtValue",
-        autoInit: true
+        autoInit: true,
+        added: function (fs) { console.log('property value added'); }
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
 
     if (this.opts.autoInit) this.init();
+    AddPropertyValueDialog.added = this.opts.added;
 };
 
 AddPropertyValueDialog.prototype.setOptions = function (options) {
