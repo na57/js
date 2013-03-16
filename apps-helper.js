@@ -260,6 +260,53 @@ function renderStatement(statement, ph) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+$.fn.showStatement = function (statement) {
+    var ph = $(this);
+    var sm = new StatementManager();
+    return sm.findBySP(statement.Predicate.ConceptId, Nagu.MType.Concept, Nagu.Concepts.NaguFormatString).done(function (fs) {
+        var phSubid = 'sub_' + randomInt();
+        var phPreId = 'pre_' + randomInt();
+        var phObjId = 'obj_' + randomInt();
+        if (fs.length) {
+
+            var t = fs[0].Object.Value.replace(/{subject}/g, '<span id="' + phSubid + '" />');
+            var t = t.replace(/{predicate}/g, '<span id="' + phPreId + '" />');
+            var t = t.replace(/{object}/g, '<span id="' + phObjId + '" />');
+            ph.append(t);
+
+            renderMorpheme2(statement.Subject, $('#' + phSubid));
+            renderMorpheme2(statement.Predicate, $('#' + phPreId));
+            renderMorpheme2(statement.Object, $('#' + phObjId));
+
+        }
+        else {
+            ph.append('{ ');
+            ph.append(newSpan(phSubid));
+            ph.append(', ');
+            ph.append(newSpan(phPreId));
+            ph.append(', ');
+            ph.append(newSpan(phObjId));
+            ph.append(' }');
+
+            renderMorpheme2(statement.Subject, $('#' + phSubid));
+            renderMorpheme2(statement.Predicate, $('#' + phPreId));
+            renderMorpheme2(statement.Object, $('#' + phObjId));
+        }
+    });
+}
+
+
+
 /************* Said状态组件 ******************************************************************************************************************************/
 function SaidStatus(sid) {
     this.sid = sid;
@@ -709,7 +756,8 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
             $.each(values, function (i, v) {
                 var li = newTag('li', { class: 'dropdown', id: 'value_' + randomInt() });
                 ul.append(li);
-                renderStatement(v, li);
+                //renderStatement(v, li);
+                li.showStatement(v);
             });
         }
     };
