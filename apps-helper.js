@@ -686,18 +686,26 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
             var dt = newDt("dt_" + propertyId);
             placeHolder.append(dt);
 
-            var cm = new ConceptManager();
+
             // 显示属性:
-            cm.get(propertyId).done(function (p) {
-                dt.append(p.FriendlyNames[0]);
-            });
+            opts.renderProperty(dt, propertyId);
             // 显示Value
             var dd = newDd();
             placeHolder.append(dd);
-            if (values.length == 0) { dd.text('无属性值'); return; }
+            opts.renderPropertyValues(dd, propertyId, values, subjectId);
+        },
+        renderProperty: function (placeHolder, propertyId, subjectId) {
+            var cm = new ConceptManager();
+            // 显示属性:
+            cm.get(propertyId).done(function (p) {
+                placeHolder.append(p.FriendlyNames[0]);
+            });
+        },
+        renderPropertyValues: function (placeHolder, propertyId, values, subjectId) {
+            if (values.length == 0) { placeHolder.text('无属性值'); return; }
 
             var ul = newTag('ul', { class: 'nav nav-pills nav-stacked' });
-            dd.append(ul);
+            placeHolder.append(ul);
             $.each(values, function (i, v) {
                 var li = newTag('li', { class: 'dropdown', id: 'value_' + randomInt() });
                 ul.append(li);
