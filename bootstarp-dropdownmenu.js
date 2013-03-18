@@ -3,24 +3,22 @@ function MenuItem(options) {
     var defaults = {
         text: "菜单项名称",
         click: function () { },
-        rendered: function (li, a) { }
+        appended: function (li, a) { }
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
 };
 
-MenuItem.prototype.render = function (options) {
+MenuItem.prototype.appendTo = function (placeHolder) {
     var menuA = newA().text(this.opts.text);
     menuA.click = this.opts.click;
 
     var menuLi = newLi();
     menuLi.append(menuA);
+    placeHolder.append(menuLi);
 
-    this.opts.rendered(menuLi, menuA);
-    return menuLi;
+    this.opts.appended(menuLi, menuA);
 }
-
-
 
 
 
@@ -39,13 +37,13 @@ function Menu(menuItems, options) {
     var defaults = {
         text: "菜单名称",
         showCaret: false,
-        rendered: function (li, a) { }
+        appended: function (li, a, ul) { }
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
 };
 
-Menu.prototype.render = function (options) {
+Menu.prototype.appendTo = function (placeHolder) {
     var menuId = 'menu' + randomInt();
     var menuLi = newTag('li', { class: 'dropdown', id: menuId });
 
@@ -53,12 +51,12 @@ Menu.prototype.render = function (options) {
     togglerA.attr('href', '#' + menuId).attr('data-toggle', 'dropdown');
     if (this.opts.showCaret) togglerA.append(newTag('b', { class: 'caret' }));
 
-    menuLi.append(togglerA);
-
     var ulItems = newTag('ul', { class: 'dropdown-menu' });
     $.each(this.items, function (i, item) {
-        ulItems.append(item.render());
+        item.appendTo(ulItems);
     });
 
-    menuLi.append(ulItems);
+    menuLi.append(togglerA).append(ulItems);
+    placeHolder.append(menuLi);
+    this.opts.appended(menuLi, togglerA, ulItems);
 }
