@@ -354,17 +354,18 @@ function findSByPO(predicateId, objectId, oType) {
 function propertyValuesFormBaseClass(subject, sType, rdfType) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = 'subject_' + subject + '_rdfType_' + rdfType;
-    if (PvsFromBaseClass[cacheKey] === undefined) {
+    if (PvsFromBaseClass[subject] === undefined) PvsFromBaseClass[subject] = new Array();
+    if (PvsFromBaseClass[subject][rdfType] === undefined) {
         $.getJSON(host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + subject,
         {
             mtype: sType,
             rdfType: rdfType
         }).done(function (pvs) {
-            PvsFromBaseClass[cacheKey] = pvs;
+            PvsFromBaseClass[subject][rdfType] = pvs;
             dtd.resolve(pvs);
         });
     } else {
-        dtd.resolve(PvsFromBaseClass[cacheKey]);
+        dtd.resolve(PvsFromBaseClass[subject][rdfType]);
     }
     return dtd.promise();
 }

@@ -11,7 +11,7 @@ function MenuItem(options) {
 
 MenuItem.prototype.appendTo = function (placeHolder) {
     var menuA = newA().text(this.opts.text);
-    menuA.click = this.opts.click;
+    menuA.click(this.opts.click);
 
     var menuLi = newLi();
     menuLi.append(menuA);

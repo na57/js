@@ -461,10 +461,12 @@ $.fn.statementList = function (statements, options) {
         clearBefore: false,
         renderItem: function (statement, li) {
             return renderMorpheme2(statement, li).done(function (c) {
-                var ss = new SaidStatus(li.attr('statementId'));
-                li.find('a').prepend(ss.getSpan());
+                //var ss = new SaidStatus(li.attr('statementId'));
+                //li.find('a').prepend(ss.getSpan());
             });
-        }
+        },
+        pageSize: 999999999999,
+        startIndex: 0
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -472,19 +474,35 @@ $.fn.statementList = function (statements, options) {
 
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象  
-    var resolvedDeferred = 0;
+    var resolvedDeferred = opts.startIndex;
 
     if (opts.clearBefore) ul.empty();
+
     // 在左侧显示所有语句
-    $.each(statements, function (i, fs) {
+    var limit = Math.min(opts.startIndex + opts.pageSize, statements.length);
+    for (var i = opts.startIndex; i < limit; i++, opts.startIndex++) {
         // 生成显示框架：li
-        var li = newLi().attr("statementId", fs.StatementId);
-        ul.append(li);
+        var li = newLi().attr("statementId", statements[i].StatementId);
+        if (opts.btnMore === undefined) {
+            ul.append(li);
+            opts.btnMore = newBtn('显示更多').hide();
+            ul.append(opts.btnMore);
+        }
+        else opts.btnMore.before(li);
 
         // 在页面左边以胶囊按钮的方式展示家族列表
-        opts.renderItem(fs, li).done(function () { if (++resolvedDeferred == statements.length) dtd.resolve(); });
+        opts.renderItem(statements[i], li).done(function () {
+            if (++resolvedDeferred == limit) dtd.resolve();
+        });
+    }
 
-    });
+    if (opts.startIndex < statements.length) {
+        opts.btnMore.unbind().click(function () {
+            opts.clearBefore = false;
+            ul.statementList(statements, opts);
+        });
+        opts.btnMore.show();
+    } else { opts.btnMore.hide(); }
     return dtd.promise();
 };
 
@@ -735,7 +753,7 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
 
 
             // 显示属性:
-            opts.renderProperty(dt, propertyId);
+            opts.renderProperty(dt, propertyId, subjectId);
             // 显示Value
             var dd = newDd();
             placeHolder.append(dd);

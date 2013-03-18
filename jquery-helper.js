@@ -48,11 +48,15 @@ function newTag(name, options) {
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
 
-    var e = $('<' + name + '></' + name + '>');
+    var e = $('<' + name + '/>');
 
     if (opts.id != "") e.attr('id', opts.id);
     if (opts.text != "") e.text(opts.text);
     if (opts.class != "") e.addClass(opts.class);
 
     return e;
+}
+
+function newBtn(text) {
+    return newTag('button', { class: 'btn', text: text });
 }
