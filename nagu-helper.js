@@ -1,24 +1,4 @@
-﻿//var RESOURCE = 0;
-//var LITERAL = 1;
-//var STATEMENT = 2;
-//var CONCEPT = 1025;
-//var CONCEPT_DB = 1026;
-
-//var MorphemeType = {
-//    Resource: 0,
-//    Literal: 1,
-//    Statement: 2,
-//    Concept: 1025,
-//    ConceptDb: 1026
-//};
-
-//var NaguConcepts = {
-//    RdfType: "4c5b16cd-d526-48cb-948e-250ce21facc8",
-//    OwlClass: "280ab0ee-7fda-4d29-9a0e-eed7850fe3b2",
-//    NaguFormatString: "0d83e5fd-eec0-4ea2-951e-38f13d57083f"
-//};
-
-/****************************************************基础类:Nagu******************************************************************/
+﻿/****************************************************基础类:Nagu******************************************************************/
 
 function Nagu() { }
 Nagu.MType = {
@@ -195,7 +175,9 @@ ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, pro
     }
 };
 
-
+ConceptManager.prototype.flush = function (conceptId) {
+    ConceptManager.ConceptCache[conceptId] = undefined;
+}
 
 
 
