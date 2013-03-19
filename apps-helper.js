@@ -197,10 +197,36 @@ function addConceptPropertyValue(subject, stype, propertyId, objectFn, objectId,
 
 
 /***********************************************************************************************************************************************************/
+$.fn.appendMorpheme = function (morpheme) {
+    var ph = $(this);
+    if (morpheme.ConceptId) {
+        console.log("morpheme.ConceptId");
+        return ph.appendConcept(morpheme.ConceptId);
+    }
+    else if (morpheme.Value)
+        return renderLiteral(morpheme, ph);
+    else if (morpheme.StatementId) {
+        console.log("morpheme.StatementId");
+        return renderStatement(morpheme, ph);
+    }
+    var dtd = $.Deferred();
+    dtd.reject();
+    return dtd.promise();
+};
+
+$.fn.appendConcept = function (cid) {
+    var ph = $(this);
+    var cm = new ConceptManager();
+    return cm.get(cid).done(function (c) {
+        ph.append(newA().text(c.FriendlyNames[0]).attr('conceptId',c.ConceptId));
+    });
+};
+
 function renderMorpheme2(morpheme, ph) {
     if (morpheme.ConceptId) {
         console.log("morpheme.ConceptId");
-        return renderConcept4(morpheme.ConceptId, ph);
+        //return renderConcept4(morpheme.ConceptId, ph);
+        return ph.appendConcept(morpheme.ConceptId);
     }
     else if (morpheme.Value)
         return renderLiteral(morpheme, ph);
@@ -211,12 +237,12 @@ function renderMorpheme2(morpheme, ph) {
     else return "unknown";
 }
 
-function renderConcept4(cid, ph) {
-    var cm = new ConceptManager();
-    return cm.get(cid).done(function (c) {
-        ph.append(newA().text(c.FriendlyNames[0]));
-    });
-}
+//function renderConcept4(cid, ph) {
+//    var cm = new ConceptManager();
+//    return cm.get(cid).done(function (c) {
+//        ph.append(newA().text(c.FriendlyNames[0]));
+//    });
+//}
 
 function renderLiteral(literal, ph) {
     ph.append(literal.Value);
@@ -492,7 +518,7 @@ $.fn.statementList = function (statements, options) {
 
         // 在页面左边以胶囊按钮的方式展示家族列表
         opts.renderItem(statements[i], li).done(function () {
-            if (++resolvedDeferred == limit) dtd.resolve();
+            if (++resolvedDeferred == limit) dtd.resolve(statements);
         });
     }
 
