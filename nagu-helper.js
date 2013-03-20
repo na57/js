@@ -227,6 +227,8 @@ StatementManager.generateCacheKey = function (statementId, subjectId, predicateI
 }
 
 StatementManager.prototype.flush = function (statementId, subjectId, predicateId, objectId, appId) {
+    if (appId === undefined || appId == "")
+        appId = "00000000-0000-0000-0000-000000000000";
     var cacheKey = StatementManager.generateCacheKey(statementId, subjectId, predicateId, objectId, appId);
     StatementManager.StatementsCache[cacheKey] = undefined;
 }

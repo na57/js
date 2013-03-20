@@ -485,6 +485,9 @@ function toggleBtnSaidStatus(onChanged) {
 $.fn.statementList = function (statements, options) {
     var defaults = {
         clearBefore: false,
+        createItemContainer: function (statement) {
+            return newLi().attr("statementId", statement.StatementId);
+        },
         renderItem: function (statement, li) {
             return renderMorpheme2(statement, li).done(function (c) {
                 //var ss = new SaidStatus(li.attr('statementId'));
@@ -492,7 +495,10 @@ $.fn.statementList = function (statements, options) {
             });
         },
         pageSize: 999999999999,
-        startIndex: 0
+        startIndex: 0,
+        createBtnMore: function(){
+            return newBtn('显示更多');
+        }
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -504,20 +510,20 @@ $.fn.statementList = function (statements, options) {
 
     if (opts.clearBefore) ul.empty();
 
+    // 加入btnMore按钮
+    if (opts.btnMore === undefined) {
+        opts.btnMore = opts.createBtnMore().hide();
+        ul.append(opts.btnMore);
+    }
+
     // 在左侧显示所有语句
     var limit = Math.min(opts.startIndex + opts.pageSize, statements.length);
     for (var i = opts.startIndex; i < limit; i++, opts.startIndex++) {
         // 生成显示框架：li
-        var li = newLi().attr("statementId", statements[i].StatementId);
-        if (opts.btnMore === undefined) {
-            ul.append(li);
-            opts.btnMore = newBtn('显示更多').hide();
-            ul.append(opts.btnMore);
-        }
-        else opts.btnMore.before(li);
+        var li = opts.createItemContainer(statements[i]);
+        opts.btnMore.before(li);
 
-        // 在页面左边以胶囊按钮的方式展示家族列表
-        opts.renderItem(statements[i], li).done(function () {
+        $.when(opts.renderItem(statements[i], li)).then(function(){
             if (++resolvedDeferred == limit) dtd.resolve(statements);
         });
     }
