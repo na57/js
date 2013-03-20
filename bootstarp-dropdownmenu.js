@@ -69,7 +69,7 @@ Menu.prototype.appendTo = function (placeHolder) {
 
 
 
-$.fn.menu = function (menuItems, options) {
+$.fn.conceptMenu = function (menuItems, options) {
     var defaults = {
         text: "菜单名称",
         showCaret: false
