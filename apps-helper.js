@@ -496,14 +496,13 @@ $.fn.statementList = function (statements, options) {
         },
         pageSize: 999999999999,
         startIndex: 0,
-        createBtnMore: function(){
-            return newBtn('显示更多');
+        createBtnMore: function () {
+            return newBtn('显示更多').addClass('nagu-btn-more');
         }
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
-    var ul = $(this);
-
+    var ul = $(this).addClass('nagu-statement-list');
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象  
     var resolvedDeferred = opts.startIndex;
@@ -512,8 +511,12 @@ $.fn.statementList = function (statements, options) {
 
     // 加入btnMore按钮
     if (opts.btnMore === undefined) {
-        opts.btnMore = opts.createBtnMore().hide();
-        ul.append(opts.btnMore);
+        if ($(this).find('.nagu-btn-more').size()) {
+            opts.btnMore = $(this).find('.nagu-btn-more');
+        } else {
+            opts.btnMore = opts.createBtnMore().hide();
+            ul.append(opts.btnMore);
+        }
     }
 
     // 在左侧显示所有语句
@@ -523,7 +526,7 @@ $.fn.statementList = function (statements, options) {
         var li = opts.createItemContainer(statements[i]);
         opts.btnMore.before(li);
 
-        $.when(opts.renderItem(statements[i], li)).then(function(){
+        $.when(opts.renderItem(statements[i], li)).then(function () {
             if (++resolvedDeferred == limit) dtd.resolve(statements);
         });
     }
