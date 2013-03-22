@@ -496,8 +496,11 @@ $.fn.statementList = function (statements, options) {
         },
         pageSize: 999999999999,
         startIndex: 0,
-        createBtnMore: function () {
-            return newBtn('显示更多').addClass('nagu-btn-more');
+        createBtnMore: function (btn, left) {
+            if (btn === undefined)
+                return newBtn('更多(剩余:' + left + ')>>').addClass('nagu-btn-more');
+            else
+                return btn.text('更多(剩余:' + left + ')>>');
         }
     };
     // Extend our default options with those provided.    
@@ -510,6 +513,8 @@ $.fn.statementList = function (statements, options) {
     if (opts.clearBefore) ul.empty();
 
     // 加入btnMore按钮
+
+
     if (opts.btnMore === undefined) {
         if ($(this).find('.nagu-btn-more').size()) {
             opts.btnMore = $(this).find('.nagu-btn-more');
@@ -518,6 +523,12 @@ $.fn.statementList = function (statements, options) {
             ul.append(opts.btnMore);
         }
     }
+
+    // 计算目前剩余多少个statement未显示:
+    var left = statements.length - opts.startIndex - opts.pageSize;
+    // 更新按钮文本:
+    opts.createBtnMore(opts.btnMore, left);
+
 
     // 在左侧显示所有语句
     var limit = Math.min(opts.startIndex + opts.pageSize, statements.length);
@@ -723,7 +734,7 @@ ConceptDetailPanel.prototype.show = function (placeHolder) {
     var divInfo = newDiv("conceptInfo_" + Math.round(Math.random() * 100000000000));
     var divTypes = newDiv("conceptInfoFromTypes_" + Math.round(Math.random() * 10000000000));
     placeHolder.append(divInfo).append(divTypes);
-    
+
     // 1. 显示基本信息
     divInfo.conceptShow(this.conceptId,
     {
@@ -735,7 +746,15 @@ ConceptDetailPanel.prototype.show = function (placeHolder) {
 
     // 2. 依次显示每个类型的信息
     divTypes.conceptInfoFromTypes(this.conceptId, this.opts);
-}
+};
+//ConceptDetailPanel.CallBacks = {
+//    renderRichTitle: function (ph, title, concept) {
+//        var btn = newA().text(title).click(function () {
+//            createConceptDialog.toggle(concept.ConceptId, { h3: '为"' + concept.FriendlyNames[0] + '"添加新的名称或简介' });
+//        });
+//        ph.append(btn);
+//    }
+//};
 
 
 $.fn.conceptShow = function (conceptId, options) {
@@ -939,7 +958,7 @@ function CreateConceptDialog(options) {
         descId: "tbConceptDesc",
         autoInit: true,
         h3: '创建新Concept',
-        onAdded: function (concept) { consle.log('new concept::::::::::' + concept.FriendlyNames[0]); }
+        onAdded: function (concept) { console.log('CreateConceptDialog created new concept::::::::::' + concept.FriendlyNames[0]); }
         
     };
     // Extend our default options with those provided.    

@@ -72,7 +72,8 @@ Menu.prototype.appendTo = function (placeHolder) {
 $.fn.conceptMenu = function (menuItems, options) {
     var defaults = {
         text: "菜单名称",
-        showCaret: false
+        showCaret: false,
+        rendered: function (ph, toggler, ulItems) { }
     };
     // Extend our default options with those provided.    
     opts = $.extend(defaults, options);
@@ -93,4 +94,5 @@ $.fn.conceptMenu = function (menuItems, options) {
 
     ph.append(togglerA).append(ulItems);
     $(".dropdown-toggle").dropdown();
+    opts.rendered(ph, togglerA, ulItems);
 };
