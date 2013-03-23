@@ -29,6 +29,17 @@ function newImg(src) {
     return img.attr("src", src);
 }
 
+function loadingImg() {
+    var img = newImg('/Content/Images/loading-18.gif');
+    return img.addClass('nagu-loading-img');
+}
+
+function loadingImg128() {
+    var img = newImg('/Content/Images/loading-128.gif');
+    return img.addClass('nagu-loading-img-128');
+}
+
+
 function newDt(id) {
     return $("<dt></dt>").attr("id", id);
 }

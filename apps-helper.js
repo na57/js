@@ -216,10 +216,12 @@ $.fn.appendMorpheme = function (morpheme) {
 
 $.fn.appendConcept = function (cid) {
     var ph = $(this);
+    var a = newA().append(loadingImg());
+
     var cm = new ConceptManager();
     return cm.get(cid).done(function (c) {
-        ph.append(newA().text(c.FriendlyNames[0]).attr('conceptId',c.ConceptId));
-    });
+        ph.append(a.empty().text(c.FriendlyNames[0]).attr('conceptId', c.ConceptId));
+    }).fail(function () { a.empty().text('数据加载失败'); });
 };
 
 function renderMorpheme2(morpheme, ph) {
@@ -535,6 +537,7 @@ $.fn.statementList = function (statements, options) {
     for (var i = opts.startIndex; i < limit; i++, opts.startIndex++) {
         // 生成显示框架：li
         var li = opts.createItemContainer(statements[i]);
+        
         opts.btnMore.before(li);
 
         $.when(opts.renderItem(statements[i], li)).then(function () {
@@ -718,11 +721,11 @@ function ConceptDetailPanel(conceptId, options) {
     var defaults = {
         host: "",
         appId: "00000000-0000-0000-0000-000000000000",
-        templateUrl: "/Apps/private/dialog/addPropertyValue.html",
         dialogId: "dlgAddPropertyValue",
         fnId: "txtFn",
         valueId: "txtValue",
-        clearBefore: true
+        clearBefore: true,
+        createConceptDialog: undefined
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
@@ -731,15 +734,13 @@ function ConceptDetailPanel(conceptId, options) {
 ConceptDetailPanel.prototype.show = function (placeHolder) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象    
     if (this.opts.clearBefore) placeHolder.empty();
-    var divInfo = newDiv("conceptInfo_" + Math.round(Math.random() * 100000000000));
-    var divTypes = newDiv("conceptInfoFromTypes_" + Math.round(Math.random() * 10000000000));
+    var divInfo = newDiv("conceptInfo_" + randomInt()).addClass('nagu-concept-detail');
+    var divTypes = newDiv("conceptInfoFromTypes_" + randomInt()).addClass('nagu-concept-infoFromTypes');
     placeHolder.append(divInfo).append(divTypes);
-
+    
     // 1. 显示基本信息
     divInfo.conceptShow(this.conceptId,
     {
-        renderFnValues: this.opts.renderFnValues,
-        renderDescValues: this.opts.renderDescValues,
         renderTitle: this.opts.renderTitle,
         renderValues: this.opts.renderValues
     });
@@ -747,15 +748,85 @@ ConceptDetailPanel.prototype.show = function (placeHolder) {
     // 2. 依次显示每个类型的信息
     divTypes.conceptInfoFromTypes(this.conceptId, this.opts);
 };
-//ConceptDetailPanel.CallBacks = {
-//    renderRichTitle: function (ph, title, concept) {
-//        var btn = newA().text(title).click(function () {
-//            createConceptDialog.toggle(concept.ConceptId, { h3: '为"' + concept.FriendlyNames[0] + '"添加新的名称或简介' });
-//        });
-//        ph.append(btn);
-//    }
-//};
 
+// 返回一个通用的,显示"富功能"的renderTitle回调函数
+ConceptDetailPanel.getFunction_RenderRichTitle = function (createConceptDialog) {
+    return function (ph, title, concept) {
+        var btn = newA().text(title).click(function () {
+            createConceptDialog.toggle(concept.ConceptId, { h3: '为"' + concept.FriendlyNames[0] + '"添加新的名称或简介' });
+        });
+        ph.append(btn);
+    };
+};
+
+// 返回一个通用的,显示"富功能"的renderValues回调函数
+ConceptDetailPanel.getFunction_renderRichValues = function (changed) {
+    return function (ph, values, valueFss) {
+        var dd = newDd();
+        var ul = newTag('ul', { class: 'nav nav-pills ' });
+        ph.append(dd.append(ul));
+
+
+
+        // 为每一个名称或描述值生成下拉菜单:
+        for (var i = 0; i < values.length; i++) {
+            var miSaid = MenuItem.getSaidMI(valueFss[i], {
+                //changed: changed === undefined ? function () { } : changed
+                changed: changed
+            });
+
+            var menu = new Menu([miSaid], {
+                text: values[i]
+            });
+            menu.appendTo(ul);
+        }
+        $('.dropdown-toggle').dropdown();
+    }
+};
+
+// 返回一个通用的,显示"富功能"的renderProperty回调函数
+ConceptDetailPanel.getFunction_renderRichProperty = function (addValueDialog) {
+    return function (placeHolder, propertyId, subjectId) {
+        var cm = new ConceptManager();
+        // 显示属性:
+        cm.get(propertyId).done(function (p) {
+            placeHolder.append(newA().text(p.FriendlyNames[0]).click(function () {
+                addValueDialog.toggle(subjectId, Nagu.MType.Concept, p.ConceptId,
+                {
+                    h3: '为属性“' + p.FriendlyNames[0] + '”添加属性值'
+                });
+            }));
+        });
+    };
+};
+
+// 返回一个通用的,显示"富功能"的renderPropertyValues回调函数
+ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
+    return function (placeHolder, propertyId, values, subjectId) {
+        if (values.length == 0) { placeHolder.text('无属性值'); return; }
+        var ul = newTag('ul', { class: 'nav nav-pills' });
+        placeHolder.append(ul);
+        $.each(values, function (i, v) {
+
+            // 为每一个属性值生产一个下拉菜单:
+            var miSaid = MenuItem.getSaidMI(v, {
+                changed: changed
+            });
+
+            var menu = new Menu([miSaid], {
+                appended: function (li, a, ul) {
+                    var cm = new ConceptManager();
+
+                    if (v.Object.Value) a.text(v.Object.Value);
+                    else cm.get(v.Object.ConceptId).done(function (c) {
+                        a.text(c.FriendlyNames[0]);
+                    });
+                }
+            });
+            menu.appendTo(ul);
+        });
+    }
+};
 
 $.fn.conceptShow = function (conceptId, options) {
     var defaults = {
@@ -772,6 +843,9 @@ $.fn.conceptShow = function (conceptId, options) {
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
     var div = $(this);
+
+    if (opts.clearBefore) div.empty();
+    div.append(loadingImg128());
 
     var dl = newTag("dl", { class: "dl-horizontal" });
     div.append(newTag("h3", { text: '基本信息 · · · · · ·' })).append(dl);
@@ -793,6 +867,7 @@ $.fn.conceptShow = function (conceptId, options) {
             opts.renderTitle(dt, '简介', concept);
             opts.renderValues(dl, concept.Descriptions, concept.DescriptionFss);
         }
+        div.find('.nagu-loading-img-128').remove();
 
     });
 };
