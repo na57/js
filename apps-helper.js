@@ -734,16 +734,15 @@ function ConceptDetailPanel(conceptId, options) {
 ConceptDetailPanel.prototype.show = function (placeHolder) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象    
     if (this.opts.clearBefore) placeHolder.empty();
-    var divTypes = newDiv("conceptInfoFromTypes_" + randomInt()).addClass('nagu-concept-infoFromTypes');
-    
-    
+
+
     // 1. 显示基本信息
     this.showDetail();
 
     // 2. 依次显示每个类型的信息
-    divTypes.conceptInfoFromTypes(this.conceptId, this.opts);
-
-    placeHolder.append(this.divDetail).append(divTypes);
+    //divTypes.conceptInfoFromTypes(this.conceptId, this.opts);
+    this.showFromTypes();
+    placeHolder.append(this.divDetail).append(this.divFromTypes);
 };
 
 
@@ -756,6 +755,12 @@ ConceptDetailPanel.prototype.showDetail = function(){
         renderTitle: this.opts.renderTitle,
         renderValues: this.opts.renderValues
     });
+};
+
+ConceptDetailPanel.prototype.showFromTypes = function () {
+    if(this.divFromTypes === undefined)
+        this.divFromTypes = newDiv().addClass('nagu-concept-infoFromTypes');
+    this.divFromTypes.conceptInfoFromTypes(this.conceptId, this.opts);      
 };
 
 // 返回一个通用的,显示"富功能"的renderTitle回调函数
