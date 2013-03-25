@@ -162,7 +162,7 @@ ConceptManager.prototype.addRdfType = function (conceptId, typeId, options) {
 };
 
 // 为Concept添加一个类型为Concept的属性值
-ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, propertyId, objectFn, objectId, onPropertyValueAdded, options) {
+ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, propertyId, objectFn, objectId, options) {
     var defaults = {
         appId: "00000000-0000-0000-0000-000000000000"
     };
@@ -178,7 +178,7 @@ ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, pro
         if (window.confirm("还未选定一个Concept作为值，您可以返回重新搜索Concept，或创建新的Concept作为值。\r\n您确定要创建名称为“" + objectFn + "”的新的Concept并作为值吗？")) {
             var objectDesc = prompt("请输入关于\"" + objectFn + "\"的描述信息：");
             this.create(objectFn, objectDesc).done(function (newc) {
-                sm.create(subject, stype, propertyId, newc.ConceptId, Nagu.MType.Concept).done(function (fs) { dtd.resolve(fs); });
+                sm.create(subject, stype, propertyId, newc.ConceptId, Nagu.MType.Concept, opts.appId).done(function (fs) { dtd.resolve(fs); });
             });
         }
         return dtd.promise();
@@ -186,7 +186,7 @@ ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, pro
 };
 
 
-// 为Concept添加一个类型为Concept的属性值
+// 为Concept添加一个类型为Literal的属性值
 ConceptManager.prototype.addLiteralPropertyValue = function (subject, propertyId, object, options) {
     var defaults = {
         appId: "00000000-0000-0000-0000-000000000000"
@@ -196,7 +196,7 @@ ConceptManager.prototype.addLiteralPropertyValue = function (subject, propertyId
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象   
     var sm = new StatementManager();
-    sm.create(subject, Nagu.MType.Concept, propertyId, object, Nagu.MType.Literal).done(function (fs) {
+    sm.create(subject, Nagu.MType.Concept, propertyId, object, Nagu.MType.Literal, opts.appId).done(function (fs) {
         dtd.resolve(fs); 
     });
     return dtd.promise();
@@ -259,15 +259,17 @@ StatementManager.prototype.flush = function (statementId, subjectId, predicateId
     var cacheKey = StatementManager.generateCacheKey(statementId, subjectId, predicateId, objectId, appId);
     StatementManager.StatementsCache[cacheKey] = undefined;
 }
-StatementManager.prototype.create = function(subjectId, stype, predicateId, object, otype) {
-    return $.post("/StatementApi/Create",
-    {
+StatementManager.prototype.create = function (subjectId, stype, predicateId, object, otype, appId) {
+    var params = {
         subjectId: subjectId,
         stype: stype,
         predicateId: predicateId,
         object: object,
-        otype: otype
-    });
+        otype: otype,
+        appId: appId
+    };
+    console.log('StatementManager.create:::' + $.param(params));
+    return $.post("/StatementApi/Create", params);
 };
 StatementManager.prototype.findBySP = function (subject, stype, predicate, options) {
     var defaults = {
