@@ -734,19 +734,28 @@ function ConceptDetailPanel(conceptId, options) {
 ConceptDetailPanel.prototype.show = function (placeHolder) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象    
     if (this.opts.clearBefore) placeHolder.empty();
-    var divInfo = newDiv("conceptInfo_" + randomInt()).addClass('nagu-concept-detail');
     var divTypes = newDiv("conceptInfoFromTypes_" + randomInt()).addClass('nagu-concept-infoFromTypes');
-    placeHolder.append(divInfo).append(divTypes);
+    
     
     // 1. 显示基本信息
-    divInfo.conceptShow(this.conceptId,
+    this.showDetail();
+
+    // 2. 依次显示每个类型的信息
+    divTypes.conceptInfoFromTypes(this.conceptId, this.opts);
+
+    placeHolder.append(this.divDetail).append(divTypes);
+};
+
+
+ConceptDetailPanel.prototype.showDetail = function(){
+    if(this.divDetail === undefined)
+        this.divDetail = newDiv().addClass('nagu-concept-detail');
+    // 1. 显示基本信息
+    this.divDetail.conceptShow(this.conceptId,
     {
         renderTitle: this.opts.renderTitle,
         renderValues: this.opts.renderValues
     });
-
-    // 2. 依次显示每个类型的信息
-    divTypes.conceptInfoFromTypes(this.conceptId, this.opts);
 };
 
 // 返回一个通用的,显示"富功能"的renderTitle回调函数
@@ -758,6 +767,7 @@ ConceptDetailPanel.getFunction_RenderRichTitle = function (createConceptDialog) 
         ph.append(btn);
     };
 };
+
 
 // 返回一个通用的,显示"富功能"的renderValues回调函数
 ConceptDetailPanel.getFunction_renderRichValues = function (changed) {
@@ -913,7 +923,8 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
 
     var div = $(this);
     if (opts.clearBefore) $(this).empty();
-
+    var loading = loadingImg128();
+    div.append(loading);
 
     // 1. 获取全部类型:
     var sm = new StatementManager();
@@ -925,6 +936,7 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
             cm.get(fs.Object.ConceptId).done(function (type) {
                 var h3 = newTag("h3", { text: type.FriendlyNames[0] + '· · · · · ·' });
                 div.append(h3);
+                loading.remove();
 
                 // 4. 循环显示每个类型的属性
                 var dl = newTag("dl");
