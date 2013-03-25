@@ -720,7 +720,7 @@ function ConceptDetailPanel(conceptId, options) {
     this.conceptId = conceptId;
     var defaults = {
         host: "",
-        appId: "00000000-0000-0000-0000-000000000000",
+        appId: "",//"00000000-0000-0000-0000-000000000000",
         dialogId: "dlgAddPropertyValue",
         fnId: "txtFn",
         valueId: "txtValue",
@@ -832,10 +832,14 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
                 appended: function (li, a, ul) {
                     var cm = new ConceptManager();
 
-                    if (v.Object.Value) a.text(v.Object.Value);
-                    else cm.get(v.Object.ConceptId).done(function (c) {
+                    if (v.Object.Value) {
+                        a.text(v.Object.Value);
+                        if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
+                    } else cm.get(v.Object.ConceptId).done(function (c) {
                         a.text(c.FriendlyNames[0]);
+                        if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
                     });
+                    
                 }
             });
             menu.appendTo(ul);
@@ -890,7 +894,7 @@ $.fn.conceptShow = function (conceptId, options) {
 $.fn.conceptInfoFromTypes = function (conceptId, options) {
     var defaults = {
         clearBefore: true,
-        appId: "00000000-0000-0000-0000-000000000000",
+        appId: "",//"00000000-0000-0000-0000-000000000000",
         renderPropertyAndValues: function (placeHolder, propertyId, values, subjectId) {
             var dt = newDt("dt_" + propertyId);
             placeHolder.append(dt);
@@ -918,7 +922,6 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
             $.each(values, function (i, v) {
                 var li = newTag('li', { class: 'dropdown', id: 'value_' + randomInt() });
                 ul.append(li);
-                //renderStatement(v, li);
                 li.showStatement(v);
             });
         }
@@ -946,7 +949,7 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
                 // 4. 循环显示每个类型的属性
                 var dl = newTag("dl");
                 div.append(dl);
-                propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, fs.Object.ConceptId).done(function (pvs) {
+                propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, fs.Object.ConceptId, opts.appId).done(function (pvs) {
                     $.each(pvs, function (i, pv) {
                         opts.renderPropertyAndValues(dl, pv.Key, pv.Value, conceptId);
                     });

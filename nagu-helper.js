@@ -17,6 +17,7 @@ Nagu.Concepts = {
     NaguFormatString: "0d83e5fd-eec0-4ea2-951e-38f13d57083f",
     PrivateObject: "e4ee4b57-fb68-4762-b99a-668a152d3ac0"
 };
+Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 
 /****************************************************本地缓存数据函数******************************************************************/
 // 缓存Morpheme数据，
@@ -382,16 +383,20 @@ function findSByPO(predicateId, objectId, oType) {
 
 
 
-function propertyValuesFormBaseClass(subject, sType, rdfType) {
+function propertyValuesFormBaseClass(subject, sType, rdfType, appId) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    if (appId === undefined) appId = "";
     var cacheKey = 'subject_' + subject + '_rdfType_' + rdfType;
     if (PvsFromBaseClass[subject] === undefined) PvsFromBaseClass[subject] = new Array();
     if (PvsFromBaseClass[subject][rdfType] === undefined) {
-        $.getJSON(host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + subject,
-        {
+        var params = {
+            subject: subject,
             mtype: sType,
-            rdfType: rdfType
-        }).done(function (pvs) {
+            rdfType: rdfType,
+            appId: appId
+        };
+        console.log('propertyValuesFormBaseClass::::' + $.param(params));
+        $.getJSON(host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + subject, params).done(function (pvs) {
             PvsFromBaseClass[subject][rdfType] = pvs;
             dtd.resolve(pvs);
         });
