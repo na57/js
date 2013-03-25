@@ -161,7 +161,14 @@ ConceptManager.prototype.addRdfType = function (conceptId, typeId, options) {
     return $.post(this.host + "/MorphemeApi/AddRdfType/" + conceptId, { stype: Nagu.MType.Concept, typeId: typeId, appId: opts.appId });
 };
 
-ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, propertyId, objectFn, objectId, onPropertyValueAdded) {
+// 为Concept添加一个类型为Concept的属性值
+ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, propertyId, objectFn, objectId, onPropertyValueAdded, options) {
+    var defaults = {
+        appId: "00000000-0000-0000-0000-000000000000"
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+    
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象   
     var sm = new StatementManager();
     if (objectId != "" && objectId != null) {
@@ -176,6 +183,23 @@ ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, pro
         }
         return dtd.promise();
     }
+};
+
+
+// 为Concept添加一个类型为Concept的属性值
+ConceptManager.prototype.addLiteralPropertyValue = function (subject, propertyId, object, options) {
+    var defaults = {
+        appId: "00000000-0000-0000-0000-000000000000"
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象   
+    var sm = new StatementManager();
+    sm.create(subject, Nagu.MType.Concept, propertyId, object, Nagu.MType.Literal).done(function (fs) {
+        dtd.resolve(fs); 
+    });
+    return dtd.promise();
 };
 
 ConceptManager.prototype.flush = function (conceptId) {
@@ -374,3 +398,24 @@ function propertyValuesFormBaseClass(subject, sType, rdfType) {
     }
     return dtd.promise();
 }
+
+
+
+
+/*** MemberManager 类*****************************************************************************************************************************/
+
+function MemberManager(host) {
+    if (host == null || host === undefined) this.host = "";
+    else this.host = host;
+}
+//MemberManager.Cache = new Array();
+MemberManager.prototype.getMe = function () {
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    if (MemberManager.me === undefined)
+        $.post("/MemberApi/GetMe").done(function (me) {
+            MemberManager.me = me;
+            dtd.resolve(me);
+        });
+    else dtd.resolve(MemberManager.me);
+    return dtd.promise();
+};
