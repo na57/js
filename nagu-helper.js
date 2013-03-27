@@ -207,6 +207,20 @@ ConceptManager.prototype.flush = function (conceptId) {
     ConceptManager.ConceptCache[conceptId] = undefined;
 }
 
+ConceptManager.prototype.getPropertiesAndValues = function (conceptId, options) {
+    var defaults = {
+        appId: "00000000-0000-0000-0000-000000000000"
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+//    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象   
+    return $.post(host + '/MorphemeApi/GetPropertiesAndValues', {
+        subjectId: conceptId,
+        appId: opts.appId
+    });
+//    return dtd.promise();
+};
 
 
 

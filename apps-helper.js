@@ -745,12 +745,13 @@ ConceptDetailPanel.prototype.show = function (placeHolder) {
     // 1. 显示基本信息
     this.showDetail();
 
-    
-
     // 2. 依次显示每个类型的信息
-    //divTypes.conceptInfoFromTypes(this.conceptId, this.opts);
     this.showFromTypes();
-    placeHolder.append(this.divDetail).append(this.divFromTypes);
+
+    // 3. 显示其他属性
+    this.showProperties();
+
+    placeHolder.append(this.divDetail).append(this.divFromTypes).append(this.divProperties);
 };
 
 
@@ -769,8 +770,14 @@ ConceptDetailPanel.prototype.showFromTypes = function () {
     if(this.divFromTypes === undefined)
         this.divFromTypes = newDiv().addClass('nagu-concept-infoFromTypes');
     this.divFromTypes.conceptInfoFromTypes(this.conceptId, this.opts);
-          
+
 };
+
+ConceptDetailPanel.prototype.showProperties = function () {
+    if (this.divProperties === undefined)
+        this.divProperties = newDiv().addClass('nagu-concept-properties');
+    this.divProperties.conceptProperties(this.conceptId, this.opts);
+}
 
 // 返回一个通用的,显示"富功能"的renderTitle回调函数
 ConceptDetailPanel.getFunction_RenderRichTitle = function (createConceptDialog) {
@@ -856,6 +863,7 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
     }
 };
 
+// 一个通用的renderType方法,使用手风琴方式展示各类型的数据
 ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts) {
     var accordionId = placeHolder.attr('id')
     if (accordionId == "") {
@@ -890,9 +898,30 @@ ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts)
                 });
             }
         });
+        // 为非公共数据加上标识
+        if (typeFs.AppId != '00000000-0000-0000-0000-000000000000') {
+            div.find('.accordion-heading').find('a').prepend(Icon('icon-lock'));
+        }
     });
 };
 
+ConceptDetailPanel.renderProperty = function (placeHolder, propertyId, subjectId) {
+    var cm = new ConceptManager();
+    // 显示属性:
+    cm.get(propertyId).done(function (p) {
+        placeHolder.append(p.FriendlyNames[0]);
+    });
+}
+
+ConceptDetailPanel.renderPropertyValues = function (placeHolder, propertyId, values, subjectId) {
+    if (values.length == 0) { placeHolder.text('无属性值'); return; }
+
+    var ul = newTag('ul', { class: 'nav nav-pills nav-stacked' }).appendTo(placeHolder);
+    $.each(values, function (i, v) {
+        var li = newTag('li', { class: 'dropdown', id: 'value_' + randomInt() }).appendTo(ul);
+        li.showStatement(v);
+    });
+}
 
 
 $.fn.conceptShow = function (conceptId, options) {
@@ -955,13 +984,7 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
             placeHolder.append(dd);
             opts.renderPropertyValues(dd, propertyId, values, subjectId);
         },
-        renderProperty: function (placeHolder, propertyId, subjectId) {
-            var cm = new ConceptManager();
-            // 显示属性:
-            cm.get(propertyId).done(function (p) {
-                placeHolder.append(p.FriendlyNames[0]);
-            });
-        },
+        renderProperty: ConceptDetailPanel.renderProperty,
         renderType: function (conceptId, placeHolder, typeFs) {
             var div = newDiv().appendTo(placeHolder);
 
@@ -986,17 +1009,7 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
                 });
             });
         },
-        renderPropertyValues: function (placeHolder, propertyId, values, subjectId) {
-            if (values.length == 0) { placeHolder.text('无属性值'); return; }
-
-            var ul = newTag('ul', { class: 'nav nav-pills nav-stacked' });
-            placeHolder.append(ul);
-            $.each(values, function (i, v) {
-                var li = newTag('li', { class: 'dropdown', id: 'value_' + randomInt() });
-                ul.append(li);
-                li.showStatement(v);
-            });
-        }
+        renderPropertyValues: ConceptDetailPanel.renderPropertyValues
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -1024,7 +1037,55 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
 
 
 
+$.fn.conceptProperties = function (conceptId, options) {
+    var defaults = {
+        clearBefore: true,
+        appId: "",
+        renderPropertyAndValues: function (placeHolder, propertyId, values, subjectId) {
+            var dt = newDt("dt_" + propertyId);
+            placeHolder.append(dt);
 
+
+            // 显示属性:
+            opts.renderProperty(dt, propertyId, subjectId);
+            // 显示Value
+            var dd = newDd();
+            placeHolder.append(dd);
+            opts.renderPropertyValues(dd, propertyId, values, subjectId);
+        },
+        renderProperty: ConceptDetailPanel.renderProperty,
+        renderPropertyValues: ConceptDetailPanel.renderPropertyValues
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+    if (opts.clearBefore) $(this).empty();
+
+    var div = $(this);
+
+    div.append(newTag('h3', { text: '其他属性 · · · · · ·' }));
+    var loading = loadingImg128();
+    div.append(loading);
+
+    // 1. 获取全部属性:
+    var cm = new ConceptManager();
+    cm.getPropertiesAndValues(conceptId).done(function (pvs) {
+        // 2. 循环显示每个属性
+        var dl = newTag("dl").appendTo(div);
+        $.each(pvs, function (i, pv) {
+            var dt = newDt("dt_" + pv.Key).appendTo(dl);
+
+            // 显示属性:
+            opts.renderProperty(dt, pv.Key, conceptId);
+            
+            // 显示Value
+            var dd = newDd().appendTo(dl);
+            opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId);
+        });
+
+        loading.remove();
+    });
+    return div;
+};
 
 
 

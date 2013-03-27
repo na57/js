@@ -65,7 +65,14 @@ MenuItem.getSaidMI = function (statement, options) {
     });
 }
 
-
+MenuItem.getDirectMI = function (text, url) {
+    return new MenuItem({
+        text: text,
+        click: function () {
+            window.location = url;
+        }
+    });
+};
 
 
 
