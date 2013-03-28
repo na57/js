@@ -973,15 +973,12 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
         clearBefore: true,
         appId: "",
         renderPropertyAndValues: function (placeHolder, propertyId, values, subjectId) {
-            var dt = newDt("dt_" + propertyId);
-            placeHolder.append(dt);
-
+            var dt = newDt().appendTo(placeHolder);
 
             // 显示属性:
             opts.renderProperty(dt, propertyId, subjectId);
             // 显示Value
-            var dd = newDd();
-            placeHolder.append(dd);
+            var dd = newDd().appendTo(placeHolder);
             opts.renderPropertyValues(dd, propertyId, values, subjectId);
         },
         renderProperty: ConceptDetailPanel.renderProperty,
@@ -1216,3 +1213,59 @@ CreateConceptDialog.prototype.hide = function () {
     $('#' + this.opts.dialogId).modal('hide');
 }
 
+
+
+
+
+
+/******* SelectConceptDialog 类 ******************************************************************************************************************/
+function SelectConceptDialog(options) {
+    var defaults = {
+        host: "",
+        appId: "",
+        templateUrl: "/Apps/private/dialog/selectConcept.html",
+        tbIdId: "tbId_" + randomInt(),
+        tbNameId: "tbName_" + randomInt(),
+        onlyMeId: 'cbOnlyMe_' + randomInt(),
+        dialogId: 'dlgSelect'+ randomInt(),
+        autoInit: true,
+        selected: function (concept, appId) { console.log('concept selected'); }
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+
+    if (this.opts.autoInit) this.init();
+    SelectConceptDialog.selected = this.opts.selected;
+};
+
+SelectConceptDialog.prototype.setOptions = function (options) {
+    this.opts = $.extend(this.opts, options);
+};
+
+SelectConceptDialog.prototype.init = function () {
+    // 以下变量声明不能删除,否则异步函数无法取值.
+    var dialogId = this.opts.dialogId;
+    var tbIdId = this.opts.tbIdId;
+    var tbNameId = this.opts.tbNameId;
+    var onlyMeId = this.opts.onlyMeId;
+    return $.get(this.opts.templateUrl).done(function (html) {
+        html = html.replace(/{dlgSelect}/g, dialogId);
+        html = html.replace(/{tbId}/g, tbIdId);
+        html = html.replace(/{tbName}/g, tbNameId);
+        html = html.replace(/{cbOnlyMe}/g, onlyMeId);
+        $('body').append(html);
+    });
+};
+
+SelectConceptDialog.prototype.toggle = function (options) {
+    this.opts = $.extend(this.opts, options);
+    SelectConceptDialog.selected = this.opts.selected;
+    
+    var div = $('#' + this.opts.dialogId);
+    div.find('h3').text(this.opts.h3);
+    div.modal('toggle');
+};
+
+SelectConceptDialog.prototype.hide = function () {
+    $('#' + this.opts.dialogId).modal('hide');
+}

@@ -15,7 +15,8 @@ Nagu.Concepts = {
     RdfType: "4c5b16cd-d526-48cb-948e-250ce21facc8",
     OwlClass: "280ab0ee-7fda-4d29-9a0e-eed7850fe3b2",
     NaguFormatString: "0d83e5fd-eec0-4ea2-951e-38f13d57083f",
-    PrivateObject: "e4ee4b57-fb68-4762-b99a-668a152d3ac0"
+    PrivateObject: "e4ee4b57-fb68-4762-b99a-668a152d3ac0",
+    NaguConcept: "ffb29350-2456-403b-857a-1577b533b8c5"
 };
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 
@@ -222,7 +223,18 @@ ConceptManager.prototype.getPropertiesAndValues = function (conceptId, options) 
 //    return dtd.promise();
 };
 
+ConceptManager.prototype.addProperty = function (conceptId, propertyId, options) {
+    var defaults = {
+        appId: ''
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
 
+    return $.post('/ConceptApi/AddProperty/' + conceptId, {
+        propertyId: propertyId,
+        appId: opts.appId
+    });
+};
 
 
 
@@ -429,7 +441,8 @@ function MemberManager(host) {
     if (host == null || host === undefined) this.host = "";
     else this.host = host;
 }
-//MemberManager.Cache = new Array();
+MemberManager.Cache = new Array();
+
 MemberManager.prototype.getMe = function () {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     if (MemberManager.me === undefined)
@@ -438,5 +451,26 @@ MemberManager.prototype.getMe = function () {
             dtd.resolve(me);
         });
     else dtd.resolve(MemberManager.me);
+    return dtd.promise();
+};
+
+// 用于检查用户是否已登录
+MemberManager.prototype.check = function () {
+    var status = {
+        nagu: false,
+        qc: false,
+        weibo: false,
+        true4ever: true,
+        false4ever: false
+    };
+
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+
+    status.qc = QC.Login.check();
+    this.getMe().done(function (me) {
+        status.nagu = me !== undefined;
+        dtd.resolve(status);
+    });
+
     return dtd.promise();
 };
