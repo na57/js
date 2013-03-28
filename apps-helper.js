@@ -883,23 +883,20 @@ ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts)
                 var dl = newTag("dl").appendTo(ph);
                 propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
                     $.each(pvs, function (i, pv) {
-                        //renderPropertyAndValues(dl, pv.Key, pv.Value, conceptId);
-                        var dt = newDt("dt_" + pv.Key);
-                        dl.append(dt);
-
+                        var dt = newDt("dt_" + pv.Key).appendTo(dl);
 
                         // 显示属性:
                         opts.renderProperty(dt, pv.Key, conceptId);
                         // 显示Value
-                        var dd = newDd();
-                        dl.append(dd);
+                        var dd = newDd().appendTo(dl);
                         opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId);
                     });
                 });
+                var btnSaid = newBtn('loading').appendTo(ph).btnSay(typeFs.StatementId);
             }
         });
         // 为非公共数据加上标识
-        if (typeFs.AppId != '00000000-0000-0000-0000-000000000000') {
+        if (typeFs.AppId != Nagu.PublicApp) {
             div.find('.accordion-heading').find('a').prepend(Icon('icon-lock'));
         }
     });
@@ -991,7 +988,6 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
 
             var cm = new ConceptManager();
             cm.get(typeFs.Object.ConceptId).done(function (type) {
-                //var h3 = newTag("h3", { text: type.FriendlyNames[0] + '· · · · · ·' });
                 h3.text(type.FriendlyNames[0] + '· · · · · ·');
                 loading.remove();
 

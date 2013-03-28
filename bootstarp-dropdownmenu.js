@@ -150,3 +150,49 @@ $.fn.conceptMenu = function (menuItems, options) {
     $(".dropdown-toggle").dropdown();
     opts.rendered(ph, togglerA, ulItems);
 };
+
+
+$.fn.btnSay = function (statementId, options) {
+    var defaults = {
+        sayText: '添加星标',
+        dontSayText: '删除星标',
+        click: function () {
+            var a = $(this);
+            var statementId = a.attr('statementId');
+            var sm = new SayManager();
+            if (a.attr('nagu-said-status')) {
+                sm.dontSay(statementId).done(function (data) {
+                    a.btnSay(statementId, options);
+                    
+                    if (data.SaidCount) a.remove();
+                    else opts.changed();
+                }).fail(function () { alert('fail'); });
+            } else {
+                sm.say(a.attr('statementId')).done(function () {
+                    a.btnSay(statementId, options);
+                    opts.changed();
+                }).fail(function () { alert('fail'); });
+            }
+        },
+        changed: function () { }
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    var ph = $(this);
+    ph.attr('statementId', statementId).addClass('btn');
+    ph.unbind('click').click(opts.click);
+
+    var saym = new SayManager();
+    saym.status(statementId).done(function (data) {
+        ph.attr('nagu-said-status', data.HasSaid);
+        if (data.HasSaid) {
+            ph.text(opts.dontSayText).prepend(Icon('icon-star-empty'));
+            ph.addClass('btn-danger');
+        } else {
+            ph.text(opts.sayText).prepend(Icon('icon-empty'));
+            ph.removeClass('btn-danger');
+        }
+    });
+
+}
