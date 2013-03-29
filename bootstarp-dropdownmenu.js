@@ -1,4 +1,8 @@
 ﻿/******* MenuItem 类 ******************************************************************************************************************/
+/*
+参考手册: #2
+*/
+
 function MenuItem(options) {
     var defaults = {
         text: "菜单项名称",
@@ -130,8 +134,11 @@ $.fn.conceptMenu = function (menuItems, options) {
     // Extend our default options with those provided.    
     opts = $.extend(defaults, options);
 
-    var ph = $(this);
+    var ph = $(this).addClass('dropdown');
+    if (ph.attr('id') === undefined || ph.attr('id') == "")
+        ph.attr('id', 'menuId' + randomInt());
     var menuId = ph.attr('id');
+
     if (opts.showToggler) {
         var togglerA = newA().text(opts.text).addClass('dropdown-toggle');
         togglerA.attr('href', '#' + menuId).attr('data-toggle', 'dropdown');
@@ -163,18 +170,18 @@ $.fn.btnSay = function (statementId, options) {
             if (a.attr('nagu-said-status')) {
                 sm.dontSay(statementId).done(function (data) {
                     a.btnSay(statementId, options);
-                    
-                    if (data.SaidCount) a.remove();
-                    else opts.changed();
+
+                    if (data.SaidCount == 0) a.remove();
+                    else opts.changed(data);
                 }).fail(function () { alert('fail'); });
             } else {
                 sm.say(a.attr('statementId')).done(function () {
                     a.btnSay(statementId, options);
-                    opts.changed();
+                    opts.changed(data);
                 }).fail(function () { alert('fail'); });
             }
         },
-        changed: function () { }
+        changed: function (data) { }
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -194,5 +201,6 @@ $.fn.btnSay = function (statementId, options) {
             ph.removeClass('btn-danger');
         }
     });
+    return ph;
 
 }

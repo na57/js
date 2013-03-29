@@ -447,8 +447,10 @@ MemberManager.prototype.getMe = function () {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     if (MemberManager.me === undefined)
         $.post("/MemberApi/GetMe").done(function (me) {
-            MemberManager.me = me;
-            dtd.resolve(me);
+            if (me.Id !== undefined) {
+                MemberManager.me = me;
+                dtd.resolve(me);
+            } else dtd.reject();
         });
     else dtd.resolve(MemberManager.me);
     return dtd.promise();
@@ -470,7 +472,16 @@ MemberManager.prototype.check = function () {
     this.getMe().done(function (me) {
         status.nagu = me !== undefined;
         dtd.resolve(status);
+    }).fail(function () {
+        dtd.resolve(status);
     });
 
     return dtd.promise();
+};
+
+
+MemberManager.prototype.loginFromQC = function (openId, accessToken) {
+    return $.post(this.host + "/MemberApi/QQBack/" + openId, {
+        accessToken: accessToken
+    });
 };
