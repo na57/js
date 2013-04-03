@@ -9,7 +9,7 @@
                             DOM结构为：<button StatementId />
 */
 
-
+ 
 
 /*
 以“dl”的形式显示属性及值
@@ -851,19 +851,25 @@ ConceptDetailPanel.getFunction_renderProperty3 = function (addValueDialog) {
                     });
                 }
             });
-            //var li = newTag('li').appendTo(placeHolder);
             placeHolder.conceptMenu([miGo, miAddValue], {
                 text: p.FriendlyNames[0]
             });
-            //            placeHolder.append(newA().text(p.FriendlyNames[0]).click(function () {
-            //                addValueDialog.toggle(subjectId, Nagu.MType.Concept, p.ConceptId,
-            //                {
-            //                    h3: '为属性“' + p.FriendlyNames[0] + '”添加属性值'
-            //                });
-            //            }));
         });
     };
 };
+
+
+
+// 具有"超链接"的renderProperty回调函数
+ConceptDetailPanel.renderProperty4 = function (placeHolder, propertyId, subjectId) {
+    var cm = new ConceptManager();
+    // 显示属性:
+    cm.get(propertyId).done(function (p) {
+        var a = newA().attr('href', '/apps/public/concept.html?id=' + propertyId);
+        a.text(p.FriendlyNames[0]).appendTo(placeHolder);
+    });
+};
+
 
 // 返回一个通用的,显示"富功能"的renderPropertyValues回调函数
 ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
