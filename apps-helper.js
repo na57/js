@@ -478,7 +478,7 @@ function toggleBtnSaidStatus(onChanged) {
 
 
 
-/*******用于显示Concept的列表******************************************************************************************************************/
+/*******用于显示Statement的列表******************************************************************************************************************/
 
 /*
 显示语句列表
@@ -1298,3 +1298,86 @@ SelectConceptDialog.prototype.toggle = function (options) {
 SelectConceptDialog.prototype.hide = function () {
     $('#' + this.opts.dialogId).modal('hide');
 }
+
+
+
+
+
+
+
+
+
+
+/*******用于显示Concept的列表******************************************************************************************************************/
+
+/*
+显示语句列表
+注意:只在"li"标签中进行显示.
+*/
+$.fn.conceptList = function (concepts, options) {
+    var defaults = {
+        clearBefore: false,
+        createItemContainer: function (concept) {
+            return newLi().attr("conceptId", concept.ConceptId);
+        },
+        renderItem: function (concept, li) {
+            return li.appendMorpheme(concept);
+        },
+        pageSize: 999999999999,
+        startIndex: 0,
+        createBtnMore: function (btn, left) {
+            if (btn === undefined)
+                return newBtn('更多(剩余:' + left + ')>>').addClass('nagu-btn-more');
+            else
+                return btn.text('更多(剩余:' + left + ')>>');
+        }
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+    var ul = $(this).addClass('nagu-concept-list');
+
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象  
+    var resolvedDeferred = opts.startIndex;
+
+    if (opts.clearBefore) ul.empty();
+
+    // 加入btnMore按钮
+
+
+    if (opts.btnMore === undefined) {
+        if ($(this).find('.nagu-btn-more').size()) {
+            opts.btnMore = $(this).find('.nagu-btn-more');
+        } else {
+            opts.btnMore = opts.createBtnMore().hide();
+            ul.append(opts.btnMore);
+        }
+    }
+
+    // 计算目前剩余多少个statement未显示:
+    var left = concepts.length - opts.startIndex - opts.pageSize;
+    // 更新按钮文本:
+    opts.createBtnMore(opts.btnMore, left);
+
+
+    // 在左侧显示所有语句
+    var limit = Math.min(opts.startIndex + opts.pageSize, concepts.length);
+    for (var i = opts.startIndex; i < limit; i++, opts.startIndex++) {
+        // 生成显示框架：li
+        var li = opts.createItemContainer(concepts[i]);
+
+        opts.btnMore.before(li);
+
+        $.when(opts.renderItem(concepts[i], li)).then(function () {
+            if (++resolvedDeferred == limit) dtd.resolve(concepts);
+        });
+    }
+
+    if (opts.startIndex < concepts.length) {
+        opts.btnMore.unbind().click(function () {
+            opts.clearBefore = false;
+            ul.conceptList(concepts, opts);
+        });
+        opts.btnMore.show();
+    } else { opts.btnMore.hide(); }
+    return dtd.promise();
+};
