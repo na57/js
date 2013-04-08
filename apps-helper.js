@@ -219,6 +219,7 @@ $.fn.appendConcept = function (cid) {
     var a = newA().append(loadingImg());
 
     var cm = new ConceptManager();
+
     return cm.get(cid).done(function (c) {
         ph.append(a.empty().text(c.FriendlyNames[0]).attr('conceptId', c.ConceptId));
     }).fail(function () { a.empty().text('数据加载失败'); });
@@ -227,7 +228,6 @@ $.fn.appendConcept = function (cid) {
 function renderMorpheme2(morpheme, ph) {
     if (morpheme.ConceptId) {
         console.log("morpheme.ConceptId");
-        //return renderConcept4(morpheme.ConceptId, ph);
         return ph.appendConcept(morpheme.ConceptId);
     }
     else if (morpheme.Value)
@@ -239,12 +239,6 @@ function renderMorpheme2(morpheme, ph) {
     else return "unknown";
 }
 
-//function renderConcept4(cid, ph) {
-//    var cm = new ConceptManager();
-//    return cm.get(cid).done(function (c) {
-//        ph.append(newA().text(c.FriendlyNames[0]));
-//    });
-//}
 
 function renderLiteral(literal, ph) {
     ph.append(literal.Value);
@@ -733,8 +727,7 @@ function ConceptDetailPanel(conceptId, options) {
         dialogId: "dlgAddPropertyValue",
         fnId: "txtFn",
         valueId: "txtValue",
-        clearBefore: true,
-        createConceptDialog: undefined
+        clearBefore: true
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
@@ -878,13 +871,21 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
         var ul = newTag('ul', { class: 'nav nav-pills' });
         placeHolder.append(ul);
         $.each(values, function (i, v) {
+            var mis = new Array();
+            
+
+            if (v.Object.ConceptId) {
+                var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + v.Object.ConceptId);
+                mis.push(miGo);
+            }
 
             // 为每一个属性值生产一个下拉菜单:
             var miSaid = MenuItem.getSaidMI(v, {
                 changed: changed
             });
+            mis.push(miSaid);
 
-            var menu = new Menu([miSaid], {
+            var menu = new Menu(mis, {
                 appended: function (li, a, ul) {
                     var cm = new ConceptManager();
 
@@ -895,7 +896,7 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
                         a.text(c.FriendlyNames[0]);
                         if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
                     });
-                    
+
                 }
             });
             menu.appendTo(ul);

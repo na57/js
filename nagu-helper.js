@@ -16,7 +16,8 @@ Nagu.Concepts = {
     OwlClass: "280ab0ee-7fda-4d29-9a0e-eed7850fe3b2",
     NaguFormatString: "0d83e5fd-eec0-4ea2-951e-38f13d57083f",
     PrivateObject: "e4ee4b57-fb68-4762-b99a-668a152d3ac0",
-    NaguConcept: "ffb29350-2456-403b-857a-1577b533b8c5"
+    NaguConcept: "ffb29350-2456-403b-857a-1577b533b8c5",
+    NaguImage: "2b97e831-9578-4b86-876b-eda87bc782c6"
 };
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 
@@ -236,7 +237,27 @@ ConceptManager.prototype.addProperty = function (conceptId, propertyId, options)
     });
 };
 
+ConceptManager.prototype.format = function (conceptId) {
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    this.isImage(conceptId).done(function (isImage) {
+        if (isImage) {
+            return '<img src="{ac6dc594-20b3-4f94-b628-a3a098c49308}" />';
+        } else {
+            $.post('/ConceptApi/GetFormatString/' + conceptId);
+        }
+    });
+};
 
+
+ConceptManager.prototype.isImage = function (conceptId) {
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象   
+    $.post('/ConceptApi/IsInstanceOf/' + conceptId, {
+        typeId: Nagu.Concepts.NaguImage
+    }).done(function (data) {
+        dtd.resolve(data.isInstanceOf);
+    });
+    return dtd.promise();
+};
 
 
 
