@@ -723,11 +723,12 @@ function ConceptDetailPanel(conceptId, options) {
     this.conceptId = conceptId;
     var defaults = {
         host: "",
-        appId: "",//"00000000-0000-0000-0000-000000000000",
+        appId: "",
         dialogId: "dlgAddPropertyValue",
         fnId: "txtFn",
         valueId: "txtValue",
-        clearBefore: true
+        clearBefore: true,
+        showDetail: true
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
@@ -739,7 +740,7 @@ ConceptDetailPanel.prototype.show = function (placeHolder) {
 
 
     // 1. 显示基本信息
-    this.showDetail();
+    if(this.opts.showDetail) this.showDetail();
 
     // 2. 依次显示每个类型的信息
     this.showFromTypes();
@@ -940,6 +941,10 @@ ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts)
                         if (data.SaidCount) $(this).remove();
                     }
                 }));
+
+                ph.append(newBtn().text('详细信息').click(function () {
+                    window.location = '/apps/public/concept.html?id=' + type.ConceptId;
+                }));
             }
         });
         // 为非公共数据加上标识
@@ -1102,6 +1107,10 @@ $.fn.conceptProperties = function (conceptId, options) {
     // 1. 获取全部属性:
     var cm = new ConceptManager();
     cm.getPropertiesAndValues(conceptId).done(function (pvs) {
+        // 如果pvs为空，则清空div:
+        if (pvs.length == 0) {
+            return div.empty();
+        }
         // 2. 循环显示每个属性
         var dl = newTag("dl").addClass("dl-horizontal").appendTo(div);
         $.each(pvs, function (i, pv) {
@@ -1109,7 +1118,7 @@ $.fn.conceptProperties = function (conceptId, options) {
 
             // 显示属性:
             opts.renderProperty(dt, pv.Key, conceptId);
-            
+
             // 显示Value
             var dd = newDd().appendTo(dl);
             opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId, opts);

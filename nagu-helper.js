@@ -17,9 +17,22 @@ Nagu.Concepts = {
     NaguFormatString: "0d83e5fd-eec0-4ea2-951e-38f13d57083f",
     PrivateObject: "e4ee4b57-fb68-4762-b99a-668a152d3ac0",
     NaguConcept: "ffb29350-2456-403b-857a-1577b533b8c5",
-    NaguImage: "2b97e831-9578-4b86-876b-eda87bc782c6"
+    NaguImage: "2b97e831-9578-4b86-876b-eda87bc782c6",
+    RdfRange: '70bd1b5a-d2c0-4887-b483-7744eac5e7cf'
 };
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
+Nagu.init = function (options) {
+    var defaults = {
+        host: "",
+        appId: ""
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+    Nagu.CM = new ConceptManager(opts.host);
+    Nagu.SM = new StatementManager(opts.host);
+    Nagu.MM = new MemberManager(opts.host);
+};
+Nagu.init();
 
 /****************************************************本地缓存数据函数******************************************************************/
 // 缓存Morpheme数据，
@@ -258,6 +271,13 @@ ConceptManager.prototype.isImage = function (conceptId) {
     });
     return dtd.promise();
 };
+
+ConceptManager.prototype.getPropertyValues = function (conceptId, propertyId) {
+    return $.post('/MorphemeApi/GetPropertyValues/', {
+        subjectId: conceptId,
+        propertyId: propertyId
+    })
+}
 
 
 
