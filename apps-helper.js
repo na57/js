@@ -140,10 +140,10 @@ function renderPropertyValues(ph, subject, sType, type, show) {
 tb: 用于输入的文本框
 hidden: 用于存储选择结果的hidden
 */
-function initConceptSearch(tb, hidden) {
+function initConceptSearch(tb, hidden, source) {
     tb.autocomplete({
         minLength: 2,
-        source: "/conceptapi/search",
+        source: source === undefined ? "/conceptapi/search" : source,
         focus: function (event, ui) {
             tb.val(ui.item.FriendlyNames[0]);
             return false;
@@ -954,6 +954,50 @@ ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts)
     });
 };
 
+
+
+// 一个通用的renderType方法,使用手风琴方式展示各类型的数据，适用于不登录的情况
+ConceptDetailPanel.renderType3 = function (conceptId, placeHolder, typeFs, opts) {
+    if (typeFs.Object.ConceptId == Nagu.Concepts.NaguConcept) return;
+    var accordionId = placeHolder.attr('id')
+    if (accordionId == "") {
+        accordionId = 'accordion_' + randomInt();
+        placeHolder.attr('id', accordionId);
+    }
+    placeHolder.addClass('accordion');
+
+    var div = newDiv().appendTo(placeHolder);
+
+    // 3. 显示类型标题:
+    Nagu.CM.get(typeFs.Object.ConceptId).done(function (type) {
+        div.naguAccordionGroup(type.FriendlyNames[0], {
+            renderBody: function (ph) {
+                // 4. 循环显示每个类型的属性
+                var dl = newTag("dl").addClass('dl-horizontal').appendTo(ph);
+                propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
+                    $.each(pvs, function (i, pv) {
+                        var dt = newDt("dt_" + pv.Key).appendTo(dl);
+
+                        // 显示属性:
+                        opts.renderProperty(dt, pv.Key, conceptId);
+                        // 显示Value
+                        var dd = newDd().appendTo(dl);
+                        opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId);
+                    });
+                });
+
+                ph.append(newBtn().text('详细信息').click(function () {
+                    window.location = '/apps/public/concept.html?id=' + type.ConceptId;
+                }));
+            }
+        });
+    });
+};
+
+
+
+
+
 ConceptDetailPanel.renderProperty = function (placeHolder, propertyId, subjectId) {
     var cm = new ConceptManager();
     // 显示属性:
@@ -981,6 +1025,31 @@ ConceptDetailPanel.renderPropertyAndValues = function (placeHolder, propertyId, 
     var dd = newDd().appendTo(placeHolder);
     opts.renderPropertyValues(dd, propertyId, values, subjectId);
 };
+
+// 类型列表默认现实
+ConceptDetailPanel.renderType1 = function (conceptId, placeHolder, typeFs) {
+    if (typeFs.Object.ConceptId == Nagu.Concepts.NaguConcept) return;
+    var div = newDiv().appendTo(placeHolder);
+
+    // 3. 显示类型标题:
+    var loading = loadingImg();
+    var h3 = newTag("h3").append(loading).appendTo(div);
+
+    var cm = new ConceptManager();
+    cm.get(typeFs.Object.ConceptId).done(function (type) {
+        h3.text(type.FriendlyNames[0] + '· · · · · ·');
+        loading.remove();
+
+
+        // 4. 循环显示每个类型的属性
+        var dl = newTag("dl").addClass("dl-horizontal").appendTo(div);
+        propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
+            $.each(pvs, function (i, pv) {
+                opts.renderPropertyAndValues(dl, pv.Key, pv.Value, conceptId, opts);
+            });
+        });
+    });
+}
 
 
 // #4
@@ -1036,28 +1105,7 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
         appId: "",
         renderPropertyAndValues: ConceptDetailPanel.renderPropertyAndValues,
         renderProperty: ConceptDetailPanel.renderProperty,
-        renderType: function (conceptId, placeHolder, typeFs) {
-            var div = newDiv().appendTo(placeHolder);
-
-            // 3. 显示类型标题:
-            var loading = loadingImg();
-            var h3 = newTag("h3").append(loading).appendTo(div);
-
-            var cm = new ConceptManager();
-            cm.get(typeFs.Object.ConceptId).done(function (type) {
-                h3.text(type.FriendlyNames[0] + '· · · · · ·');
-                loading.remove();
-
-
-                // 4. 循环显示每个类型的属性
-                var dl = newTag("dl").addClass("dl-horizontal").appendTo(div);
-                propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
-                    $.each(pvs, function (i, pv) {
-                        opts.renderPropertyAndValues(dl, pv.Key, pv.Value, conceptId, opts);
-                    });
-                });
-            });
-        },
+        renderType: ConceptDetailPanel.renderType3,
         renderPropertyValues: ConceptDetailPanel.renderPropertyValues
     };
     // Extend our default options with those provided.    
@@ -1272,7 +1320,8 @@ function SelectConceptDialog(options) {
         tbIdId: "tbId_" + randomInt(),
         tbNameId: "tbName_" + randomInt(),
         onlyMeId: 'cbOnlyMe_' + randomInt(),
-        dialogId: 'dlgSelect'+ randomInt(),
+        dialogId: 'dlgSelect' + randomInt(),
+        typeId: '',
         autoInit: true,
         selected: function (concept, appId) { console.log('concept selected'); }
     };
@@ -1293,12 +1342,15 @@ SelectConceptDialog.prototype.init = function () {
     var tbIdId = this.opts.tbIdId;
     var tbNameId = this.opts.tbNameId;
     var onlyMeId = this.opts.onlyMeId;
+    var typeId = this.opts.typeId;
     return $.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{dlgSelect}/g, dialogId);
         html = html.replace(/{tbId}/g, tbIdId);
         html = html.replace(/{tbName}/g, tbNameId);
         html = html.replace(/{cbOnlyMe}/g, onlyMeId);
+
         $('body').append(html);
+        initConceptSearch($('#'+tbNameId), $('#'+tbIdId), '/conceptapi/search?typeId='+typeId);
     });
 };
 
