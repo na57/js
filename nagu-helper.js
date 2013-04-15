@@ -394,6 +394,33 @@ StatementManager.prototype.findByPO = function (predicateId, objectId, oType, op
     return dtd.promise();
 };
 
+StatementManager.prototype.findSByPO = function (predicateId, objectId, oType, options) {
+    var defaults = {
+        appId: ""
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    var cacheKey = StatementManager.generateCacheKey('', '1025', predicateId, objectId, opts.appId);
+    if (StatementManager.StatementsCache[cacheKey] === undefined) {
+        $.getJSON(host + "/MorphemeApi/FindSByPO/" + predicateId,
+        {
+            otype: oType,
+            objectId: objectId,
+            appId: opts.appId
+        }).done(function (fss) {
+            StatementManager.StatementsCache[cacheKey] = fss;
+            dtd.resolve(fss);
+        }).fail(function () { dtd.reject(); });
+    } else {
+        dtd.resolve(StatementManager.StatementsCache[cacheKey]);
+    }
+    return dtd.promise();
+};
+
+
+
 StatementManager.prototype.get = function (id) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey(id, '', '', '', '');
