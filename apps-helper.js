@@ -1376,6 +1376,68 @@ SelectConceptDialog.prototype.hide = function () {
 
 
 
+
+
+
+/******* SearchConceptDialog 类 ******************************************************************************************************************/
+function SearchConceptDialog(options) {
+    var defaults = {
+        appId: "",
+        templateUrl: "/Apps/private/dialog/searchConcept.html",
+        tbNameId: "tbName_" + randomInt(),
+        onlyMeId: 'cbOnlyMe_' + randomInt(),
+        dialogId: 'dlgSearch' + randomInt(),
+        typeId: '',
+        autoInit: true,
+        selected: function (concept, appId) { console.log('concept selected'); }
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+
+    if (this.opts.autoInit) this.init();
+    SearchConceptDialog.selected = this.opts.selected;
+};
+
+SearchConceptDialog.prototype.setOptions = function (options) {
+    this.opts = $.extend(this.opts, options);
+};
+
+SearchConceptDialog.prototype.init = function () {
+    // 以下变量声明不能删除,否则异步函数无法取值.
+    var dialogId = this.opts.dialogId;
+    var tbNameId = this.opts.tbNameId;
+    var onlyMeId = this.opts.onlyMeId;
+    var typeId = this.opts.typeId;
+    return $.get(this.opts.templateUrl).done(function (html) {
+        html = html.replace(/{dlgSelect}/g, dialogId);
+        html = html.replace(/{tbName}/g, tbNameId);
+        html = html.replace(/{cbOnlyMe}/g, onlyMeId);
+        html = html.replace(/{typeId}/g, typeId);
+        $('body').append(html);
+    });
+};
+
+SearchConceptDialog.prototype.toggle = function (options) {
+    this.opts = $.extend(this.opts, options);
+    SearchConceptDialog.selected = this.opts.selected;
+
+    var div = $('#' + this.opts.dialogId);
+    div.find('h3').text(this.opts.h3);
+    div.modal('toggle');
+};
+
+SearchConceptDialog.prototype.hide = function () {
+    $('#' + this.opts.dialogId).modal('hide');
+}
+
+
+
+
+
+
+
+
+
 /*******用于显示Concept的列表******************************************************************************************************************/
 
 /*

@@ -279,6 +279,12 @@ ConceptManager.prototype.getPropertyValues = function (conceptId, propertyId) {
     })
 }
 
+ConceptManager.prototype.search = function (fn, typeId) {
+    return $.post('/ConceptApi/Search/', {
+        term: fn,
+        typeId: typeId
+    })
+}
 
 
 
