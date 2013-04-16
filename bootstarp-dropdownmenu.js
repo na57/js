@@ -79,6 +79,23 @@ MenuItem.getDirectMI = function (text, url) {
 };
 
 
+//// 返回一个通用的,用于添加或删除星标的MenuItem对象
+//MenuItem.getImageMI = function (options) {
+//    var defaults = {
+//        //imgUrl: ''
+//    };
+//    // Extend our default options with those provided.    
+//    var opts = $.extend(defaults, options);
+
+//    return new MenuItem({
+//        text: '显示图片',
+//        click: function () {
+//            
+//        }
+//    });
+//}
+
+
 
 
 

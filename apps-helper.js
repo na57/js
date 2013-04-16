@@ -872,11 +872,22 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
         var ul = newTag('ul', { class: 'nav nav-pills' });
         placeHolder.append(ul);
         $.each(values, function (i, v) {
-            var mis = new Array();
-            
+            /* 待显示的Concept，
+            * 可能在Subject的位置上，也可能在Object的位置上。
+            * 根据属性的元数据可以推断得出。
+            * 例如，当属性的owl:inverseOf属性有值，且值与v的Predicate相等，
+            * 此时属性值就应当取Subject位置上的Concept。
+            */
+            var valueConcept = v.Object;
 
-            if (v.Object.ConceptId) {
-                var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + v.Object.ConceptId);
+            // 当两者不同时，有可能出现属性值在Subject位置的情况。
+            if (v.Predicate.ConceptId != propertyId) {
+                
+            }
+            var mis = new Array();
+
+            if (valueConcept.ConceptId) {
+                var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + valueConcept.ConceptId);
                 mis.push(miGo);
             }
 
@@ -890,10 +901,10 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
                 appended: function (li, a, ul) {
                     var cm = new ConceptManager();
 
-                    if (v.Object.Value) {
-                        a.text(v.Object.Value);
+                    if (valueConcept.Value) {
+                        a.text(valueConcept.Value);
                         if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
-                    } else cm.get(v.Object.ConceptId).done(function (c) {
+                    } else cm.get(valueConcept.ConceptId).done(function (c) {
                         a.text(c.FriendlyNames[0]);
                         if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
                     });
@@ -907,6 +918,9 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
 
 // 一个通用的renderType方法,使用手风琴方式展示各类型的数据
 ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts) {
+    // 如果是“Concept基本信息”，则不显示
+    if (typeFs.Object.ConceptId == Nagu.Concepts.NaguConcept) return;
+
     var accordionId = placeHolder.attr('id')
     if (accordionId == "") {
         accordionId = 'accordion_' + randomInt();
@@ -958,6 +972,9 @@ ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts)
 
 // 一个通用的renderType方法,使用手风琴方式展示各类型的数据，适用于不登录的情况
 ConceptDetailPanel.renderType3 = function (conceptId, placeHolder, typeFs, opts) {
+    // 保证Object是Concept，不是则跳出：
+    if (typeFs.Object.ConceptId === undefined) return;
+
     if (typeFs.Object.ConceptId == Nagu.Concepts.NaguConcept) return;
     var accordionId = placeHolder.attr('id')
     if (accordionId == "") {
@@ -976,7 +993,7 @@ ConceptDetailPanel.renderType3 = function (conceptId, placeHolder, typeFs, opts)
                 var dl = newTag("dl").addClass('dl-horizontal').appendTo(ph);
                 propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
                     $.each(pvs, function (i, pv) {
-                        var dt = newDt("dt_" + pv.Key).appendTo(dl);
+                        var dt = newDt().appendTo(dl);
 
                         // 显示属性:
                         opts.renderProperty(dt, pv.Key, conceptId);
@@ -1125,6 +1142,9 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
     sm.findBySP(conceptId, Nagu.MType.Concept, Nagu.Concepts.RdfType, { appId: opts.appId }).done(function (fss) {
         // 2. 循环显示每一个类型:
         $.each(fss, function (i, fs) {
+            opts.subjectId = conceptId;
+            opts.typeDiv = typeDiv;
+            opts.typeFs = fs;
             opts.renderType(conceptId, typeDiv, fs, opts);
         });
         loading.remove();
@@ -1265,8 +1285,11 @@ function CreateConceptDialog(options) {
         descId: "tbConceptDesc",
         autoInit: true,
         h3: '创建新Concept',
-        onAdded: function (concept) { console.log('CreateConceptDialog created new concept::::::::::' + concept.FriendlyNames[0]); }
-        
+        onAdded: function (concept) {
+            console.log('CreateConceptDialog created new concept::::::::::' + concept.FriendlyNames[0]);
+            window.location = '/apps/public/concept.html?id=' + concept.ConceptId;
+        }
+
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);

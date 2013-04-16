@@ -20,6 +20,10 @@ Nagu.Concepts = {
     NaguImage: "2b97e831-9578-4b86-876b-eda87bc782c6",
     RdfRange: '70bd1b5a-d2c0-4887-b483-7744eac5e7cf'
 };
+Nagu.Owl = {
+    InverseOf: 'a9288b7b-927d-4cdf-b561-2043701a5ba6',
+    Class: '280ab0ee-7fda-4d29-9a0e-eed7850fe3b2'
+};
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 Nagu.init = function (options) {
     var defaults = {
