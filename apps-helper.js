@@ -141,26 +141,31 @@ tb: 用于输入的文本框
 hidden: 用于存储选择结果的hidden
 */
 function initConceptSearch(tb, hidden, source) {
-    tb.autocomplete({
-        minLength: 2,
-        source: source === undefined ? "/conceptapi/search" : source,
-        focus: function (event, ui) {
-            tb.val(ui.item.FriendlyNames[0]);
-            return false;
-        },
-        select: function (event, ui) {
-            tb.val(ui.item.FriendlyNames[0]);
-            hidden.val(ui.item.ConceptId);
-            return false;
-        }
-    }).data("autocomplete")._renderItem = function (ul, item) {
-        var fn = item.FriendlyNames[0];
-        var desc = item.Descriptions[0] == "" ? "没有描述" : item.Descriptions[0];
-        return $("<li></li>")
+    try {
+        tb.autocomplete({
+            minLength: 2,
+            source: source === undefined ? "/conceptapi/search" : source,
+            focus: function (event, ui) {
+                tb.val(ui.item.FriendlyNames[0]);
+                return false;
+            },
+            select: function (event, ui) {
+                tb.val(ui.item.FriendlyNames[0]);
+                hidden.val(ui.item.ConceptId);
+                return false;
+            }
+        }).data("autocomplete")._renderItem = function (ul, item) {
+            var fn = item.FriendlyNames[0];
+            var desc = item.Descriptions[0] == "" ? "没有描述" : item.Descriptions[0];
+            return $("<li></li>")
                     .data("item.autocomplete", item)
                     .append("<a><b>" + fn + "</b>（<em>" + desc + "</em>）</a>")
                     .appendTo(ul);
-    };
+        };
+    } catch (e) {
+
+    }
+    
 }
 
 
@@ -216,12 +221,13 @@ $.fn.appendMorpheme = function (morpheme) {
 
 $.fn.appendConcept = function (cid) {
     var ph = $(this);
-    var a = newA().append(loadingImg());
+    var a = newA().append(loadingImg()).appendTo(ph);
 
     var cm = new ConceptManager();
 
     return cm.get(cid).done(function (c) {
-        ph.append(a.empty().text(c.FriendlyNames[0]).attr('conceptId', c.ConceptId));
+        a.empty().text(c.FriendlyNames[0]).attr('conceptId', c.ConceptId);
+        a.attr('title', c.Descriptions[0]);
     }).fail(function () { a.empty().text('数据加载失败'); });
 };
 
@@ -1280,9 +1286,9 @@ function CreateConceptDialog(options) {
         host: "",
         appId: "00000000-0000-0000-0000-000000000000",
         templateUrl: "/Apps/private/dialog/createConcept.html",
-        dialogId: "dlgCreateConcept",
-        fnId: "tbConceptName",
-        descId: "tbConceptDesc",
+        dialogId: "dlgCreateConcept" + randomInt(),
+        fnId: "tbConceptName" + randomInt(),
+        descId: "tbConceptDesc" + randomInt(),
         autoInit: true,
         h3: '创建新Concept',
         onAdded: function (concept) {
@@ -1302,11 +1308,11 @@ CreateConceptDialog.prototype.OnAdded = function (concept) {};
 CreateConceptDialog.prototype.init = function () {
     var dialogId = this.opts.dialogId;
     var txtFnId = this.opts.fnId;
-    var txtValueId = this.opts.valueId;
+    var txtDescId = this.opts.descId;
     return $.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{dlgCreateConcept}/g, dialogId);
         html = html.replace(/{txtConceptName}/g, txtFnId);
-        html = html.replace(/{txtConceptDesc}/g, txtValueId);
+        html = html.replace(/{txtConceptDesc}/g, txtDescId);
         $('body').append(html);
     });
 };
@@ -1344,6 +1350,7 @@ function SelectConceptDialog(options) {
         tbNameId: "tbName_" + randomInt(),
         onlyMeId: 'cbOnlyMe_' + randomInt(),
         dialogId: 'dlgSelect' + randomInt(),
+        resultId: 'result' + randomInt(),
         typeId: '',
         autoInit: true,
         selected: function (concept, appId) { console.log('concept selected'); }
@@ -1366,14 +1373,16 @@ SelectConceptDialog.prototype.init = function () {
     var tbNameId = this.opts.tbNameId;
     var onlyMeId = this.opts.onlyMeId;
     var typeId = this.opts.typeId;
+    var resultId = this.opts.resultId;
     return $.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{dlgSelect}/g, dialogId);
         html = html.replace(/{tbId}/g, tbIdId);
         html = html.replace(/{tbName}/g, tbNameId);
         html = html.replace(/{cbOnlyMe}/g, onlyMeId);
+        html = html.replace(/{result}/g, resultId);
 
         $('body').append(html);
-        initConceptSearch($('#'+tbNameId), $('#'+tbIdId), '/conceptapi/search?typeId='+typeId);
+        //initConceptSearch($('#' + tbNameId), $('#' + tbIdId), '/conceptapi/search?typeId=' + typeId);
     });
 };
 

@@ -18,7 +18,8 @@ Nagu.Concepts = {
     PrivateObject: "e4ee4b57-fb68-4762-b99a-668a152d3ac0",
     NaguConcept: "ffb29350-2456-403b-857a-1577b533b8c5",
     NaguImage: "2b97e831-9578-4b86-876b-eda87bc782c6",
-    RdfRange: '70bd1b5a-d2c0-4887-b483-7744eac5e7cf'
+    RdfRange: '70bd1b5a-d2c0-4887-b483-7744eac5e7cf',
+    User: 'a1dc1f11-371e-4e5b-84a9-0cd3cf40f049'
 };
 Nagu.Owl = {
     InverseOf: 'a9288b7b-927d-4cdf-b561-2043701a5ba6',
@@ -539,14 +540,16 @@ MemberManager.prototype.check = function () {
     var status = {
         nagu: false,
         qc: false,
-        weibo: false,
-        true4ever: true,
-        false4ever: false
+        weibo: false
     };
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
 
-    status.qc = QC.Login.check();
+    try {
+        status.qc = QC.Login.check();
+    } catch (e) {
+    }
+
     this.getMe().done(function (me) {
         status.nagu = me !== undefined;
         dtd.resolve(status);
