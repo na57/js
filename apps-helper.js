@@ -648,10 +648,12 @@ function AddPropertyValueDialog(options) {
         host: "",
         appId: "00000000-0000-0000-0000-000000000000",
         templateUrl: "/Apps/private/dialog/addPropertyValue.html",
-        dialogId: "dlgAddPropertyValue",
+        dialogId: "dlgAddPropertyValue" + randomInt(),
         fnId: "txtFn_" + randomInt(),
         valueId: "txtValue_" + randomInt(),
-        onlyMeId: 'cbOnlyMe_'+randomInt(),
+        onlyMeId: 'cbOnlyMe_' + randomInt(),
+        titleId: 'tbTitle_' + randomInt(),
+        contentId: 'txtContent_'+randomInt(),
         autoInit: true,
         added: function (fs) { console.log('property value added'); }
     };
@@ -672,11 +674,16 @@ AddPropertyValueDialog.prototype.init = function () {
     var txtFnId = this.opts.fnId;
     var txtValueId = this.opts.valueId;
     var onlyMeId = this.opts.onlyMeId;
+    var titleId = this.opts.titleId;
+    var contentId = this.opts.contentId;
     return $.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{dlgAddPropertyValue}/g, dialogId);
         html = html.replace(/{txtFn}/g, txtFnId);
         html = html.replace(/{txtValue}/g, txtValueId);
         html = html.replace(/{cbOnlyMe}/g, onlyMeId);
+        html = html.replace(/{tbTitle}/g, titleId);
+        html = html.replace(/{txtContent}/g, contentId);
+
         $('body').append(html);
     });
 };
@@ -695,6 +702,80 @@ AddPropertyValueDialog.prototype.hide = function () {
     $('#' + this.opts.dialogId).modal('hide');
 }
 
+AddPropertyValueDialog.AddTextValue = function (tbTitle, txtContent, appId) {
+
+};
+
+AddPropertyValueDialog.AddLiteralValue = function (options) {
+    var defaults = {
+        appId: ''
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    var val = opts.tbValue.val();
+    if (val == "") {
+        opts.dialog.find('ul.error-list').append(newLi().append("请输入属性值"));
+        opts.dialog.find('.alert-error').show();
+        return;
+    }
+    Nagu.CM.addLiteralPropertyValue(opts.subjectId, opts.predicateId, val, { appId: opts.appId }).done(function (fs) {
+        opts.tbValue.val('');
+        opts.dialog.modal('hide');
+        AddPropertyValueDialog.added(fs);
+    });
+
+}
+
+AddPropertyValueDialog.AddTextValue = function (options) {
+    var defaults = {
+        appId: ''
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+
+    var title = opts.tbTitle.val();
+    var content = opts.txtContent.val();
+
+    var hasError = false;
+    opts.dialog.find('ul.error-list').empty();
+    opts.dialog.find('.alert-error').hide();
+    if (title == "") {
+        opts.dialog.find('ul.error-list').append(newLi().append("请输入标题"));
+        hasError = true;
+    }
+    if (content == "") {
+        opts.dialog.find('ul.error-list').append(newLi().append("请输入内容"));
+        hasError = true;
+    }
+    if (hasError) {
+        opts.dialog.find('.alert-error').show();
+        return;
+    }
+
+    //var dtd = $.Defrred();
+    var resolved = 0;
+
+    Nagu.CM.create(title, '文章：' + title, {
+        appId: opts.appId,
+        typeId: Nagu.Concepts.Article
+    }).done(function (newc) {
+        // 添加语句：{subjectId, predicateId, newc}
+        Nagu.CM.addConceptPropertyValue(opts.subjectId, Nagu.MType.Concept, opts.predicateId, '', newc.ConceptId, { appId: opts.appId }).done(function (fs) {
+            
+            // 添加语句：{newc, article:Content, content}
+            Nagu.CM.addLiteralPropertyValue(newc.ConceptId, Nagu.Concepts.articleContent, content, {
+                appId: opts.appId
+            }).done(function (fs) {
+                opts.tbTitle.val('');
+                opts.txtContent.val('');
+                opts.dialog.modal('hide');
+                AddPropertyValueDialog.added(fs);
+            });
+        });
+    });
+}
 
 
 
@@ -703,6 +784,50 @@ AddPropertyValueDialog.prototype.hide = function () {
 
 
 
+
+
+
+/******* ArticleShowDialog 类 ***********************************************************************************************************************************/
+function ArticleShowDialog(options) {
+    var defaults = {
+        host: "",
+        appId: "",
+        templateUrl: "/Apps/private/dialog/articleShow.html",
+        dialogId: "dlgArticleShow" + randomInt(),
+        autoInit: true,
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+
+    if (this.opts.autoInit) this.init();
+};
+
+ArticleShowDialog.prototype.init = function () {
+    // 以下变量声明不能删除,否则异步函数无法取值.
+    var dialogId = this.opts.dialogId;
+    return $.get(this.opts.templateUrl).done(function (html) {
+        html = html.replace(/{dlgArticleShow}/g, dialogId);
+
+        $('body').append(html);
+    });
+};
+
+ArticleShowDialog.prototype.toggle = function (conceptId, options) {
+    this.opts = $.extend(this.opts, options);
+
+    var div = $('#' + this.opts.dialogId);
+    Nagu.CM.get(conceptId).done(function(concept){
+        div.find('h3').text(concept.FriendlyNames[0]);
+    });
+    Nagu.CM.getPropertyValues(conceptId,Nagu.Concepts.articleContent).done(function(fss){
+        $.each(fss, function(i, fs){
+            if(fs.Object.Value){
+                div.find('.nagu-article-content').text(fs.Object.Value);
+            }
+        });
+    });
+    div.modal('toggle');
+};
 
 
 
@@ -797,7 +922,7 @@ ConceptDetailPanel.getFunction_RenderRichTitle = function (createConceptDialog) 
 ConceptDetailPanel.getFunction_renderRichValues = function (changed) {
     return function (ph, values, valueFss) {
         var dd = newDd();
-        var ul = newTag('ul', { class: 'nav nav-pills ' });
+        var ul = newTag('ul').addClass('nav nav-pills');
         ph.append(dd.append(ul));
 
 
@@ -805,7 +930,6 @@ ConceptDetailPanel.getFunction_renderRichValues = function (changed) {
         // 为每一个名称或描述值生成下拉菜单:
         for (var i = 0; i < values.length; i++) {
             var miSaid = MenuItem.getSaidMI(valueFss[i], {
-                //changed: changed === undefined ? function () { } : changed
                 changed: changed
             });
 
@@ -875,7 +999,7 @@ ConceptDetailPanel.renderProperty4 = function (placeHolder, propertyId, subjectI
 ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
     return function (placeHolder, propertyId, values, subjectId) {
         if (values.length == 0) { placeHolder.text('无属性值'); return; }
-        var ul = newTag('ul', { class: 'nav nav-pills' });
+        var ul = newTag('ul').addClass('nav nav-pills');
         placeHolder.append(ul);
         $.each(values, function (i, v) {
             /* 待显示的Concept，
@@ -892,16 +1016,18 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
             }
             var mis = new Array();
 
-            if (valueConcept.ConceptId) {
-                var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + valueConcept.ConceptId);
-                mis.push(miGo);
-            }
-
             // 为每一个属性值生产一个下拉菜单:
             var miSaid = MenuItem.getSaidMI(v, {
                 changed: changed
             });
             mis.push(miSaid);
+
+            if (valueConcept.ConceptId) {
+                var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + valueConcept.ConceptId);
+                mis.push(miGo);
+            }
+
+            
 
             var menu = new Menu(mis, {
                 appended: function (li, a, ul) {
@@ -921,6 +1047,97 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
         });
     }
 };
+
+
+
+// 返回一个通用的,显示"富功能"的renderPropertyValues回调函数
+ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
+    var defaults = {
+        changed: function(){},
+        articleShowDialog: undefined
+    };
+    var opts = $.extend(defaults, options);
+
+    return function (placeHolder, propertyId, values, subjectId) {
+        if (values.length == 0) { placeHolder.text('无属性值'); return; }
+        var ul = newTag('ul').addClass('nav nav-pills');
+        placeHolder.append(ul);
+        $.each(values, function (i, v) {
+            /* 待显示的Concept，
+            * 可能在Subject的位置上，也可能在Object的位置上。
+            * 根据属性的元数据可以推断得出。
+            * 例如，当属性的owl:inverseOf属性有值，且值与v的Predicate相等，
+            * 此时属性值就应当取Subject位置上的Concept。
+            */
+            var valueConcept = v.Object;
+
+            // 当两者不同时，有可能出现属性值在Subject位置的情况。
+            if (v.Predicate.ConceptId != propertyId) {
+                
+            }
+            var menu;
+            var mis = new Array();
+
+            // 为每一个属性值生产一个下拉菜单:
+            var miSaid = MenuItem.getSaidMI(v, {
+                changed: opts.changed
+            });
+            mis.push(miSaid);
+
+            if (valueConcept.ConceptId) {
+                var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + valueConcept.ConceptId);
+                mis.push(miGo);
+
+                // 考察属性值的类型，根据不同类型插入不同的菜单
+                Nagu.CM.get(valueConcept.ConceptId).done(function(concept){
+                    $.each(concept.TypeFss, function(i, typeFs){
+                        if(typeFs.Object.ConceptId == Nagu.Concepts.Article){
+                            var articleShowMI = new MenuItem({
+                                text: '查看内容',
+                                click: function(){
+                                    if(opts.articleShowDialog !== undefined){
+                                        opts.articleShowDialog.toggle(valueConcept.ConceptId);
+                                    }
+                                }
+                            });
+                            //mis.push(articleShowMI);
+                            menu.insert(articleShowMI);
+                        }
+                    });
+                });
+            }
+
+            
+
+            menu = new Menu(mis, {
+                appended: function (li, a, ul) {
+                    var cm = new ConceptManager();
+
+                    if (valueConcept.Value) {
+                        a.text(valueConcept.Value);
+                        if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
+                    } else cm.get(valueConcept.ConceptId).done(function (c) {
+                        a.text(c.FriendlyNames[0]);
+                        if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
+                    });
+
+                }
+            });
+            menu.appendTo(ul);
+        });
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
 
 // 一个通用的renderType方法,使用手风琴方式展示各类型的数据
 ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts) {
@@ -1032,9 +1249,9 @@ ConceptDetailPanel.renderProperty = function (placeHolder, propertyId, subjectId
 ConceptDetailPanel.renderPropertyValues = function (placeHolder, propertyId, values, subjectId) {
     if (values.length == 0) { placeHolder.text('无属性值'); return; }
 
-    var ul = newTag('ul', { class: 'nav nav-pills nav-stacked' }).appendTo(placeHolder);
+    var ul = newTag('ul').addClass('nav nav-pills nav-stacked').appendTo(placeHolder);
     $.each(values, function (i, v) {
-        var li = newTag('li', { class: 'dropdown', id: 'value_' + randomInt() }).appendTo(ul);
+        var li = newTag('li', { id: 'value_' + randomInt() }).addClass('dropdown').appendTo(ul);
         li.showStatement(v);
     });
 };
@@ -1328,7 +1545,7 @@ CreateConceptDialog.prototype.toggle = function (conceptId, options) {
     div.attr('conceptId', conceptId);
     div.attr('appId', this.opts.appId);
     div.find('h3').text(this.opts.h3);
-    div.modal('toggle');
+    div.modal('show');
 };
 
 CreateConceptDialog.prototype.hide = function () {

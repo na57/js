@@ -5,25 +5,27 @@
 
 function Nagu() { }
 Nagu.MType = {
-    Resource: 0,
-    Literal: 1,
-    Statement: 2,
-    Concept: 1025,
-    ConceptDb: 1026
+    Resource:   0,
+    Literal:    1,
+    Statement:  2,
+    Concept:    1025,
+    ConceptDb:  1026
 };
 Nagu.Concepts = {
-    RdfType: "4c5b16cd-d526-48cb-948e-250ce21facc8",
-    OwlClass: "280ab0ee-7fda-4d29-9a0e-eed7850fe3b2",
-    NaguFormatString: "0d83e5fd-eec0-4ea2-951e-38f13d57083f",
-    PrivateObject: "e4ee4b57-fb68-4762-b99a-668a152d3ac0",
-    NaguConcept: "ffb29350-2456-403b-857a-1577b533b8c5",
-    NaguImage: "2b97e831-9578-4b86-876b-eda87bc782c6",
-    RdfRange: '70bd1b5a-d2c0-4887-b483-7744eac5e7cf',
-    User: 'a1dc1f11-371e-4e5b-84a9-0cd3cf40f049'
+    RdfType:            "4c5b16cd-d526-48cb-948e-250ce21facc8",
+    OwlClass:           "280ab0ee-7fda-4d29-9a0e-eed7850fe3b2",
+    NaguFormatString:   "0d83e5fd-eec0-4ea2-951e-38f13d57083f",
+    PrivateObject:      "e4ee4b57-fb68-4762-b99a-668a152d3ac0",
+    NaguConcept:        "ffb29350-2456-403b-857a-1577b533b8c5",
+    NaguImage:          "2b97e831-9578-4b86-876b-eda87bc782c6",
+    RdfRange:           '70bd1b5a-d2c0-4887-b483-7744eac5e7cf',
+    User:               'a1dc1f11-371e-4e5b-84a9-0cd3cf40f049',
+    Article:            'a345d7d6-9db5-4edd-86fe-a1df9dcdeb70',
+    articleContent:     '6bef4f02-1d1d-4161-b017-0e9e4879883c'
 };
 Nagu.Owl = {
-    InverseOf: 'a9288b7b-927d-4cdf-b561-2043701a5ba6',
-    Class: '280ab0ee-7fda-4d29-9a0e-eed7850fe3b2'
+    InverseOf:          'a9288b7b-927d-4cdf-b561-2043701a5ba6',
+    Class:              '280ab0ee-7fda-4d29-9a0e-eed7850fe3b2'
 };
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 Nagu.init = function (options) {
@@ -151,7 +153,8 @@ ConceptManager.prototype.get = function (id) {
 ConceptManager.prototype.create = function (fn, desc, options) {
     var defaults = {
         id: "",
-        appId: "00000000-0000-0000-0000-000000000000"
+        appId: "00000000-0000-0000-0000-000000000000",
+        typeId: ''
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -159,7 +162,12 @@ ConceptManager.prototype.create = function (fn, desc, options) {
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象    
     if (opts.id === undefined || opts.id == null || opts.id == "") {
-        $.post(this.host + "/ConceptApi/Create/", { fn: fn, desc: desc, appId: opts.appId }).done(function (c) {
+        $.post(this.host + "/ConceptApi/Create/", {
+            fn: fn,
+            desc: desc,
+            appId: opts.appId,
+            typeId: opts.typeId
+        }).done(function (c) {
             ConceptManager.ConceptCache[c.ConceptId] = c;
             dtd.resolve(c);
         }).fail(function () { alert('ConceptManager.create失败'); dtd.reject(); });
@@ -565,4 +573,22 @@ MemberManager.prototype.loginFromQC = function (openId, accessToken) {
     return $.post(this.host + "/MemberApi/QQBack/" + openId, {
         accessToken: accessToken
     });
+};
+
+
+
+
+
+
+
+
+
+
+
+/*** MemberManager 类*****************************************************************************************************************************/
+function WeiboManager(options) {
+}
+
+WeiboManager.prototype.shorten = function (url_long) {
+    
 };

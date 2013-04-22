@@ -79,6 +79,7 @@ MenuItem.getDirectMI = function (text, url) {
 };
 
 
+
 //// 返回一个通用的,用于添加或删除星标的MenuItem对象
 //MenuItem.getImageMI = function (options) {
 //    var defaults = {
@@ -111,8 +112,9 @@ function Menu(menuItems, options) {
         showCaret: false,
         appended: function (li, a, ul) { },
         renderContainer: function (id) {
-            return newTag('li', { class: 'dropdown', id: id });
-        }
+            return newTag('li', { id: id }).addClass('dropdown');
+        },
+        ulItems: newTag('ul').addClass('dropdown-menu')
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
@@ -124,9 +126,9 @@ Menu.prototype.appendTo = function (placeHolder) {
 
     var togglerA = newA().text(this.opts.text).addClass('dropdown-toggle');
     togglerA.attr('href', '#' + menuId).attr('data-toggle', 'dropdown');
-    if (this.opts.showCaret) togglerA.append(newTag('b', { class: 'caret' }));
+    if (this.opts.showCaret) togglerA.append(newTag('b').addClass('caret'));
 
-    var ulItems = newTag('ul', { class: 'dropdown-menu' });
+    var ulItems = this.opts.ulItems//newTag('ul').addClass('dropdown-menu');
 
     var ulId = 'ul_' + randomInt();
     $.each(this.items, function (i, item) {
@@ -138,6 +140,9 @@ Menu.prototype.appendTo = function (placeHolder) {
     this.opts.appended(menuLi, togglerA, ulItems);
 }
 
+Menu.prototype.insert = function (menuItem) {
+    menuItem.appendTo(this.opts.ulItems);
+};
 
 
 
@@ -159,11 +164,11 @@ $.fn.conceptMenu = function (menuItems, options) {
     if (opts.showToggler) {
         var togglerA = newA().text(opts.text).addClass('dropdown-toggle');
         togglerA.attr('href', '#' + menuId).attr('data-toggle', 'dropdown');
-        if (opts.showCaret) togglerA.append(newTag('b', { class: 'caret' }));
+        if (opts.showCaret) togglerA.append(newTag('b').addClass('caret'));
         ph.append(togglerA);
     }
 
-    var ulItems = newTag('ul', { class: 'dropdown-menu' });
+    var ulItems = newTag('ul').addClass('dropdown-menu');
 
     //alert( ph.attr('id'));
     $.each(menuItems, function (i, item) {
