@@ -21,7 +21,8 @@ Nagu.Concepts = {
     RdfRange:           '70bd1b5a-d2c0-4887-b483-7744eac5e7cf',
     User:               'a1dc1f11-371e-4e5b-84a9-0cd3cf40f049',
     Article:            'a345d7d6-9db5-4edd-86fe-a1df9dcdeb70',
-    articleContent:     '6bef4f02-1d1d-4161-b017-0e9e4879883c'
+    articleContent:     '6bef4f02-1d1d-4161-b017-0e9e4879883c',
+    Literal:            '26a11dbc-f50a-480e-9ff4-7106f1af3fcb'
 };
 Nagu.Owl = {
     InverseOf:          'a9288b7b-927d-4cdf-b561-2043701a5ba6',
