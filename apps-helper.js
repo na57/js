@@ -576,15 +576,18 @@ $.fn.statementList = function (statements, options) {
 function AddTypeDialog(options) {
     var defaults = {
         host: "",
-        appId: "",//"00000000-0000-0000-0000-000000000000",
+        appId: "",
         templateUrl: "/Apps/private/dialog/addType.html",
         onlyMeId: 'cbOnlyMe_'+randomInt(),
+        dialogId: 'dlgAddType',
+        collapseConceptId: 'collapseConcept'+randomInt(),
+        collapseSystemId: 'collapseSystem'+randomInt(),
         autoInit: true,
         onTypeAdded: function (fs) { }
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
-    AddTypeDialog.prototype.onTypeAdded = this.opts.onTypeAdded;
+    AddTypeDialog.onTypeAdded = this.opts.onTypeAdded;
 
     if (this.opts.autoInit) this.init();
 };
@@ -595,27 +598,52 @@ AddTypeDialog.prototype.setOptions = function(options){
 
 AddTypeDialog.prototype.init = function () {
     var onlyMeId = this.opts.onlyMeId;
+    var collapseConcept = this.opts.collapseConceptId;
+    var collapseSystem = this.opts.collapseSystemId;
+
     return $.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{cbOnlyMe}/g, onlyMeId);
+        html = html.replace(/{collapseConcept}/g, collapseConcept);
+        html = html.replace(/{collapseSystem}/g, collapseSystem);
+
         $('body').append(html);
     });
 };
 
 AddTypeDialog.prototype.toggle = function (subjectId, stype) {
-    $('#dlgAddType').attr('subjectId', subjectId);
-    $('#dlgAddType').attr('stype', stype);
-    $('#dlgAddType').attr('appId', this.opts.appId);
+    //this.opts.subjectId = subjectId;
+    //this.opts.stype = stype;
 
-    $('#dlgAddType').modal('toggle');
+    var dialog = $('#' + this.opts.dialogId);
+    dialog.attr('subjectId', subjectId);
+    dialog.attr('stype', stype);
+    dialog.attr('appId', this.opts.appId);
+
+    dialog.modal('toggle');
 };
 
 AddTypeDialog.prototype.hide = function () {
     $('#dlgAddType').modal('hide');
 }
-AddTypeDialog.prototype.onTypeAdded = function (fs) { };
+AddTypeDialog.onTypeAdded = function (fs) { };
 
+AddTypeDialog.AddType = function(subjectId, typeId, options){
+    var defaults = {
+        appId: "",
+        stype: Nagu.MType.CONCEPT
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
 
-
+    //2. 完成类型添加
+    return Nagu.CM.addRdfType(subjectId, typeId, {
+            appId: opts.appId 
+        }).done(function (fs) {
+            console.log('成功添加Type,TypeId: ' + typeId);
+            console.log('执行AddTypeDialog.onTypeAdded:::fsId=' + fs.StatementId);
+            AddTypeDialog.onTypeAdded(fs);
+        });
+};
 
 
 

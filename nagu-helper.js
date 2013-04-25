@@ -22,12 +22,18 @@ Nagu.Concepts = {
     User:               'a1dc1f11-371e-4e5b-84a9-0cd3cf40f049',
     Article:            'a345d7d6-9db5-4edd-86fe-a1df9dcdeb70',
     articleContent:     '6bef4f02-1d1d-4161-b017-0e9e4879883c',
-    Literal:            '26a11dbc-f50a-480e-9ff4-7106f1af3fcb'
+    Literal:            '26a11dbc-f50a-480e-9ff4-7106f1af3fcb',
+    SystemTypeBag:      '76b2ba52-0f0c-4a76-b899-65e921092c28'  // “系统预定义”类型
 };
 Nagu.Owl = {
     InverseOf:          'a9288b7b-927d-4cdf-b561-2043701a5ba6',
     Class:              '280ab0ee-7fda-4d29-9a0e-eed7850fe3b2'
 };
+Nagu.Rdf = {
+    Bag:                'ada49e35-2c62-404e-b3df-db368149521f',
+    Li:                 '028428d9-3470-47bb-abe1-5712bc047589'
+};
+
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 Nagu.init = function (options) {
     var defaults = {
