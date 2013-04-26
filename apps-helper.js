@@ -683,6 +683,7 @@ function AddPropertyValueDialog(options) {
         titleId: 'tbTitle_' + randomInt(),
         contentId: 'txtContent_'+randomInt(),
         accordionConceptId: 'accordionConcept' + randomInt(),
+        btnNewId: 'btnNew'+randomInt(),
         autoInit: true,
         added: function (fs) { console.log('property value added'); }
     };
@@ -706,6 +707,7 @@ AddPropertyValueDialog.prototype.init = function () {
     var titleId = this.opts.titleId;
     var contentId = this.opts.contentId;
     var accordionConceptId = this.opts.accordionConceptId;
+    var btnNewId = this.opts.btnNewId;
 
     return $.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{dlgAddPropertyValue}/g, dialogId);
@@ -715,6 +717,7 @@ AddPropertyValueDialog.prototype.init = function () {
         html = html.replace(/{tbTitle}/g, titleId);
         html = html.replace(/{txtContent}/g, contentId);
         html = html.replace(/{accordionConcept}/g, accordionConceptId);
+        html = html.replace(/{btnNew}/g, btnNewId);
 
         $('body').append(html);
     });
