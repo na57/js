@@ -682,6 +682,7 @@ function AddPropertyValueDialog(options) {
         onlyMeId: 'cbOnlyMe_' + randomInt(),
         titleId: 'tbTitle_' + randomInt(),
         contentId: 'txtContent_'+randomInt(),
+        accordionConceptId: 'accordionConcept' + randomInt(),
         autoInit: true,
         added: function (fs) { console.log('property value added'); }
     };
@@ -704,6 +705,8 @@ AddPropertyValueDialog.prototype.init = function () {
     var onlyMeId = this.opts.onlyMeId;
     var titleId = this.opts.titleId;
     var contentId = this.opts.contentId;
+    var accordionConceptId = this.opts.accordionConceptId;
+
     return $.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{dlgAddPropertyValue}/g, dialogId);
         html = html.replace(/{txtFn}/g, txtFnId);
@@ -711,6 +714,7 @@ AddPropertyValueDialog.prototype.init = function () {
         html = html.replace(/{cbOnlyMe}/g, onlyMeId);
         html = html.replace(/{tbTitle}/g, titleId);
         html = html.replace(/{txtContent}/g, contentId);
+        html = html.replace(/{accordionConcept}/g, accordionConceptId);
 
         $('body').append(html);
     });
@@ -730,8 +734,18 @@ AddPropertyValueDialog.prototype.hide = function () {
     $('#' + this.opts.dialogId).modal('hide');
 }
 
-AddPropertyValueDialog.AddTextValue = function (tbTitle, txtContent, appId) {
+AddPropertyValueDialog.AddConceptValue = function (subjectId, predicateId, conceptId, options) {
+    var defaults = {
+        appId: ''
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
 
+    return Nagu.CM.addConceptPropertyValue2(subjectId, predicateId, conceptId, {
+        appId: opts.appId 
+    }).done(function (fs) {
+        AddPropertyValueDialog.added(fs);
+    });
 };
 
 AddPropertyValueDialog.AddLiteralValue = function (options) {
