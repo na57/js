@@ -23,7 +23,7 @@ Nagu.Concepts = {
     Article:            'a345d7d6-9db5-4edd-86fe-a1df9dcdeb70',
     articleContent:     '6bef4f02-1d1d-4161-b017-0e9e4879883c',
     Literal:            '26a11dbc-f50a-480e-9ff4-7106f1af3fcb',
-    SystemTypeBag:      '76b2ba52-0f0c-4a76-b899-65e921092c28'  // “系统预定义”类型
+    SystemTypeBag:      '76b2ba52-0f0c-4a76-b899-65e921092c28'  // “系统预定义类型”包
 };
 Nagu.Owl = {
     InverseOf:          'a9288b7b-927d-4cdf-b561-2043701a5ba6',
@@ -143,24 +143,27 @@ function ConceptManager(host) {
 ConceptManager.ConceptCache = new Array();
 ConceptManager.prototype.get = function (id) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
-    if (ConceptManager.ConceptCache[id] === undefined) {
+    var result = ConceptManager.getCachedConcept(id);
+    if (result === undefined || result == null) {
         $.getJSON(this.host + "/ConceptApi/Get/" + id).done(function (concept) {
-            ConceptManager.ConceptCache[id] = concept;
+            //ConceptManager.ConceptCache[id] = concept;
+            ConceptManager.setCachedConcept(concept);
             dtd.resolve(concept);
         }).fail(function () {
-            alert('getConcept失败');
+            alert('getConcept失败，conceptId:' + id);
             dtd.reject();
         });
     }
     else {
-        dtd.resolve(ConceptManager.ConceptCache[id]);
+        //dtd.resolve(ConceptManager.ConceptCache[id]);
+        dtd.resolve(ConceptManager.getCachedConcept(id));
     }
     return dtd.promise(); // 返回promise对象
 }
 ConceptManager.prototype.create = function (fn, desc, options) {
     var defaults = {
-        id: "",
-        appId: "00000000-0000-0000-0000-000000000000",
+        id: '',
+        appId: '',//"00000000-0000-0000-0000-000000000000",
         typeId: ''
     };
     // Extend our default options with those provided.    
@@ -175,12 +178,14 @@ ConceptManager.prototype.create = function (fn, desc, options) {
             appId: opts.appId,
             typeId: opts.typeId
         }).done(function (c) {
-            ConceptManager.ConceptCache[c.ConceptId] = c;
+            //ConceptManager.ConceptCache[c.ConceptId] = c;
+            ConceptManager.setCachedConcept(c);
             dtd.resolve(c);
         }).fail(function () { alert('ConceptManager.create失败'); dtd.reject(); });
     } else {
         $.post(this.host + "/ConceptApi/Create/", { id: opts.id, fn: fn, desc: desc, appId: opts.appId }).done(function (c) {
-            ConceptManager.ConceptCache[c.ConceptId] = c;
+            //ConceptManager.ConceptCache[c.ConceptId] = c;
+            ConceptManager.setCachedConcept(c);
             dtd.resolve(c);
         }).fail(function () { alert('ConceptManager.create失败'); dtd.reject(); });
     }
@@ -239,7 +244,7 @@ ConceptManager.prototype.addLiteralPropertyValue = function (subject, propertyId
 };
 
 ConceptManager.prototype.flush = function (conceptId) {
-    ConceptManager.ConceptCache[conceptId] = undefined;
+    ConceptManager.removeCachedConcept(conceptId);
 }
 
 ConceptManager.prototype.getPropertiesAndValues = function (conceptId, options) {
@@ -306,7 +311,32 @@ ConceptManager.prototype.search = function (fn, typeId) {
     })
 }
 
+ConceptManager.getCachedConcept = function (cid) {
+    if ($.jStorage && $.jStorage.storageAvailable()) {
+        return $.jStorage.get('concept_' + cid, null);
+    } else {
+        return ConceptManager.ConceptCache[cid];
+    }
+};
 
+ConceptManager.setCachedConcept = function (concept) {
+    if ($.jStorage && $.jStorage.storageAvailable()) {
+        $.jStorage.set('concept_' + concept.ConceptId, concept, {
+            // 默认存储时间为3天，为避免同时刷新，增加2个小时之内的随机时间
+            TTL: 259200000 + 7200000*Math.random() 
+        });
+    } else {
+        ConceptManager.ConceptCache[concept.ConceptId] = concept;
+    }
+};
+
+ConceptManager.removeCachedConcept = function (cid) {
+    if ($.jStorage && $.jStorage.storageAvailable()) {
+        $.jStorage.set('concept_' + cid, undefined);
+    } else {
+        ConceptManager.ConceptCache[cid] = undefined;
+    }
+};
 
 
 
