@@ -23,7 +23,8 @@ Nagu.Concepts = {
     Article:            'a345d7d6-9db5-4edd-86fe-a1df9dcdeb70',
     articleContent:     '6bef4f02-1d1d-4161-b017-0e9e4879883c',
     Literal:            '26a11dbc-f50a-480e-9ff4-7106f1af3fcb',
-    SystemTypeBag:      '76b2ba52-0f0c-4a76-b899-65e921092c28'  // “系统预定义类型”包
+    SystemTypeBag: '76b2ba52-0f0c-4a76-b899-65e921092c28',  // “系统预定义类型”包
+    App: 'f1933904-6bac-425b-abf8-c5f4032a380f' // 描述“应用”的类
 };
 Nagu.Owl = {
     InverseOf:          'a9288b7b-927d-4cdf-b561-2043701a5ba6',
@@ -225,6 +226,19 @@ ConceptManager.prototype.addConceptPropertyValue = function (subject, stype, pro
         return dtd.promise();
     }
 };
+
+// 为Concept添加一个类型为Concept的属性值，新的。
+ConceptManager.prototype.addConceptPropertyValue2 = function (subject, propertyId, objectId, options) {
+    var defaults = {
+        appId: ''
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    return Nagu.SM.create(subject, Nagu.MType.Concept, propertyId, objectId, Nagu.MType.Concept, opts.appId);
+
+};
+
 
 
 // 为Concept添加一个类型为Literal的属性值
