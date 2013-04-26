@@ -189,7 +189,7 @@ $.fn.btnSay = function (statementId, options) {
             var a = $(this);
             var statementId = a.attr('statementId');
             var sm = new SayManager();
-            if (a.attr('nagu-said-status')) {
+            if (a.attr('nagu-said-status') == 'true') {
                 sm.dontSay(statementId).done(function (data) {
                     a.btnSay(statementId, options);
 
@@ -197,7 +197,7 @@ $.fn.btnSay = function (statementId, options) {
                     else opts.changed(data);
                 }).fail(function () { alert('fail'); });
             } else {
-                sm.say(a.attr('statementId')).done(function () {
+                sm.say(a.attr('statementId')).done(function (data) {
                     a.btnSay(statementId, options);
                     opts.changed(data);
                 }).fail(function () { alert('fail'); });
