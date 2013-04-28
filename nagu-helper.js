@@ -263,7 +263,7 @@ ConceptManager.prototype.flush = function (conceptId) {
 
 ConceptManager.prototype.getPropertiesAndValues = function (conceptId, options) {
     var defaults = {
-        appId: "00000000-0000-0000-0000-000000000000"
+        appId: ''
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);

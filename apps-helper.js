@@ -223,9 +223,8 @@ $.fn.appendConcept = function (cid) {
     var ph = $(this);
     var a = newA().append(loadingImg()).appendTo(ph);
 
-    var cm = new ConceptManager();
 
-    return cm.get(cid).done(function (c) {
+    return Nagu.CM.get(cid).done(function (c) {
         a.empty().text(c.FriendlyNames[0]).attr('conceptId', c.ConceptId);
         a.attr('title', c.Descriptions[0]);
     }).fail(function () { a.empty().text('数据加载失败'); });

@@ -164,6 +164,7 @@ $.fn.conceptMenu = function (menuItems, options) {
     if (opts.showToggler) {
         var togglerA = newA().text(opts.text).addClass('dropdown-toggle');
         togglerA.attr('href', '#' + menuId).attr('data-toggle', 'dropdown');
+        if (opts.title) togglerA.attr('title', opts.title);
         if (opts.showCaret) togglerA.append(newTag('b').addClass('caret'));
         ph.append(togglerA);
     }
