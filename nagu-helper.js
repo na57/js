@@ -46,6 +46,7 @@ Nagu.init = function (options) {
     Nagu.CM = new ConceptManager(opts.host);
     Nagu.SM = new StatementManager(opts.host);
     Nagu.MM = new MemberManager(opts.host);
+    Nagu.DialogM = new DialogManager();
 };
 Nagu.init();
 
@@ -636,10 +637,59 @@ MemberManager.prototype.loginFromQC = function (openId, accessToken) {
 
 
 
-/*** MemberManager 类*****************************************************************************************************************************/
+/*** WeiboManager 类*****************************************************************************************************************************/
 function WeiboManager(options) {
 }
 
 WeiboManager.prototype.shorten = function (url_long) {
-    
+
 };
+
+
+
+
+
+
+
+
+
+
+
+/*** DialogManager 类*****************************************************************************************************************************/
+function DialogManager(options) {
+}
+DialogManager.Cache = new Array();
+
+DialogManager.prototype.get = function (url) {
+    var dtd = $.Deferred();
+
+
+    if ($.jStorage && $.jStorage.storageAvailable()) {
+
+        // 本地存储可用
+        var html = $.jStorage.get('dailog' + url, null);
+        if (html == null) {
+            $.get(url).done(function (data) {
+                $.jStorage.set('dailog' + url, data, {
+                    // 默认存储时间为3天，为避免同时刷新，增加2个小时之内的随机时间
+                    TTL: 259200000 + 7200000 * Math.random()
+                });
+                dtd.resolve(data);
+            });
+        } else {
+            dtd.resolve(html);
+        }
+    } else {
+        // 本地存储不可用
+        if (DialogManager.Cache[url] === undefined) {
+            $.get(url).done(function (data) {
+                DialogManager.Cache[url] = data;
+                dtd.resolve(data);
+            });
+        } else {
+            dtd.resolve(DialogManager.Cache[url]);
+        }
+    }
+
+    return dtd.promise();
+}

@@ -708,7 +708,7 @@ AddPropertyValueDialog.prototype.init = function () {
     var accordionConceptId = this.opts.accordionConceptId;
     var btnNewId = this.opts.btnNewId;
 
-    return $.get(this.opts.templateUrl).done(function (html) {
+    Nagu.DialogM.get(this.opts.templateUrl).done(function(html){
         html = html.replace(/{dlgAddPropertyValue}/g, dialogId);
         html = html.replace(/{txtFn}/g, txtFnId);
         html = html.replace(/{txtValue}/g, txtValueId);
@@ -720,6 +720,19 @@ AddPropertyValueDialog.prototype.init = function () {
 
         $('body').append(html);
     });
+
+//    return $.get(this.opts.templateUrl).done(function (html) {
+//        html = html.replace(/{dlgAddPropertyValue}/g, dialogId);
+//        html = html.replace(/{txtFn}/g, txtFnId);
+//        html = html.replace(/{txtValue}/g, txtValueId);
+//        html = html.replace(/{cbOnlyMe}/g, onlyMeId);
+//        html = html.replace(/{tbTitle}/g, titleId);
+//        html = html.replace(/{txtContent}/g, contentId);
+//        html = html.replace(/{accordionConcept}/g, accordionConceptId);
+//        html = html.replace(/{btnNew}/g, btnNewId);
+
+//        $('body').append(html);
+//    });
 };
 
 AddPropertyValueDialog.prototype.toggle = function (subjectId, stype, predicateId, options) {
