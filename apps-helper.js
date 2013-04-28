@@ -1144,7 +1144,6 @@ ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
                                     }
                                 }
                             });
-                            //mis.push(articleShowMI);
                             menu.insert(articleShowMI);
                         }
                     });
@@ -1440,8 +1439,7 @@ $.fn.conceptProperties = function (conceptId, options) {
     div.append(loading);
 
     // 1. 获取全部属性:
-    var cm = new ConceptManager();
-    cm.getPropertiesAndValues(conceptId).done(function (pvs) {
+    Nagu.CM.getPropertiesAndValues(conceptId).done(function (pvs) {
         // 如果pvs为空，则清空div:
         if (pvs.length == 0) {
             return div.empty();

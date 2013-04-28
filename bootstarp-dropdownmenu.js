@@ -41,6 +41,7 @@ MenuItem.getSaidMI = function (statement, options) {
                 sm.say(a.attr('statementId')).done(function () {
                     a.text('删除星标');
                     a.attr('nagu-said-status', !a.attr('nagu-said-status'));
+                    opts.changed();
                 }).fail(function () { alert('fail'); a.text('添加星标'); });
             } else {
                 sm.dontSay(a.attr('statementId')).done(function (data) {
@@ -50,9 +51,10 @@ MenuItem.getSaidMI = function (statement, options) {
                         a.text('添加星标');
                         a.attr('nagu-said-status', !a.attr('nagu-said-status'));
                     }
+                    opts.changed();
                 }).fail(function () { alert('fail'); a.text('删除星标'); });
             }
-            opts.changed();
+            
         },
         appended: function (li, a) {
             a.attr('statementId', statement.StatementId);
