@@ -35,11 +35,16 @@ Nagu.Rdf = {
     Li:                 '028428d9-3470-47bb-abe1-5712bc047589'
 };
 
+Nagu.App = {
+    Manager: '18567b72-f23a-4845-b40a-fc1886a7277f'
+}
+
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 Nagu.init = function (options) {
     var defaults = {
         host: "",
-        appId: ""
+        appId: "",
+        iframeId: 'pmIframe'
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -113,34 +118,16 @@ SayManager.prototype.status = function (statementId) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /***Concept操作*****************************************************************************************************************************/
 
-function ConceptManager(host) {
-    if (host == null || host === undefined) this.host = "";
-    else this.host = host;
+function ConceptManager(options) {
+    var defaults = {
+        host: "",
+        iframeId: 'pmIframe'
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+    this.host = this.opts.host;
 }
 ConceptManager.ConceptCache = new Array();
 ConceptManager.prototype.get = function (id) {
@@ -436,7 +423,7 @@ StatementManager.prototype.findBySP = function (subject, stype, predicate, optio
 };
 StatementManager.prototype.findByPO = function (predicateId, objectId, oType, options) {
     var defaults = {
-        appId: "00000000-0000-0000-0000-000000000000"
+        appId: ''
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -444,7 +431,7 @@ StatementManager.prototype.findByPO = function (predicateId, objectId, oType, op
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey('', '', predicateId, objectId, opts.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
-        $.getJSON(host + "/MorphemeApi/FindByPO/" + predicateId,
+        $.post(this.host + "/MorphemeApi/FindByPO/" + predicateId,
         {
             otype: oType,
             objectId: objectId,
@@ -627,7 +614,21 @@ MemberManager.prototype.loginFromQC = function (openId, accessToken) {
     });
 };
 
+MemberManager.ManageableApps = undefined;
 
+// 获取指定用户可管理的App
+MemberManager.prototype.manageableApps = function (userId) {
+    var dtd = $.Deferred();
+    if (MemberManager.ManageableApps === undefined) {
+        Nagu.SM.findByPO(Nagu.App.Manager, userId, Nagu.MType.Concept).done(function (fss) {
+            MemberManager.ManageableApps = fss;
+            dtd.resolve(fss);
+        });
+    } else {
+        dtd.resolve(MemberManager.ManageableApps);
+    }
+    return dtd.promise();
+}
 
 
 

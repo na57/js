@@ -577,10 +577,10 @@ function AddTypeDialog(options) {
         host: "",
         appId: "",
         templateUrl: "/Apps/private/dialog/addType.html",
-        onlyMeId: 'cbOnlyMe_'+randomInt(),
         dialogId: 'dlgAddType',
         collapseConceptId: 'collapseConcept'+randomInt(),
-        collapseSystemId: 'collapseSystem'+randomInt(),
+        collapseSystemId: 'collapseSystem' + randomInt(),
+        listAppsId: 'listAppsId' + randomInt(),
         autoInit: true,
         onTypeAdded: function (fs) { }
     };
@@ -596,22 +596,20 @@ AddTypeDialog.prototype.setOptions = function(options){
 }
 
 AddTypeDialog.prototype.init = function () {
-    var onlyMeId = this.opts.onlyMeId;
     var collapseConcept = this.opts.collapseConceptId;
     var collapseSystem = this.opts.collapseSystemId;
+    var listAppsId = this.opts.listAppsId;
 
     return $.get(this.opts.templateUrl).done(function (html) {
-        html = html.replace(/{cbOnlyMe}/g, onlyMeId);
         html = html.replace(/{collapseConcept}/g, collapseConcept);
         html = html.replace(/{collapseSystem}/g, collapseSystem);
+        html = html.replace(/{listApps}/g, listAppsId);
 
         $('body').append(html);
     });
 };
 
 AddTypeDialog.prototype.toggle = function (subjectId, stype) {
-    //this.opts.subjectId = subjectId;
-    //this.opts.stype = stype;
 
     var dialog = $('#' + this.opts.dialogId);
     dialog.attr('subjectId', subjectId);
@@ -1518,6 +1516,28 @@ Dialog.prototype.setOptions = function (options) {
     this.opts = $.extend(this.opts, options);
 };
 
+// 初始化对话框中的“可见范围”列表。
+Dialog.InitAppList = function (listApps) {
+    var dtd = $.Deferred();
+
+    // 初始化“私有选项”。
+    Nagu.MM.getMe().done(function (me) {
+        var option = $('<option/>').attr('value', me.Id);
+        option.text('私有').appendTo(listApps);
+
+        // 将当前用户具有“app:Manager”权限的App列入列表中
+        Nagu.MM.manageableApps(me.Id).done(function(fss){
+            $.each(fss, function (i, fs) {
+                var opt = $('<option/>').attr('value', fs.Subject.ConceptId).appendTo(listApps);
+                Nagu.CM.get(fs.Subject.ConceptId).done(function (app) {
+                    opt.text(app.FriendlyNames[0]);
+                });
+            });
+            dtd.resolve();
+        });
+    });
+    return dtd.promise(); 
+};
 
 
 
