@@ -36,8 +36,13 @@ Nagu.Rdf = {
 };
 
 Nagu.App = {
-    Manager: '18567b72-f23a-4845-b40a-fc1886a7277f'
+    Manager: '18567b72-f23a-4845-b40a-fc1886a7277f',
+    Public: '00000000-0000-0000-0000-000000000000'
 }
+
+Nagu.Image = {
+    Url: 'ac6dc594-20b3-4f94-b628-a3a098c49308'
+};
 
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 Nagu.init = function (options) {

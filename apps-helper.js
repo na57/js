@@ -845,9 +845,50 @@ ArticleShowDialog.prototype.toggle = function (conceptId, options) {
 };
 
 
+/******* ImageShowDialog 类 ***********************************************************************************************************************************/
+function ImageShowDialog(options) {
+    var defaults = {
+        host: "",
+        appId: "",
+        templateUrl: "/Apps/private/dialog/imageShow.html",
+        dialogId: "dlgImageShow" + randomInt(),
+        autoInit: true,
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
 
+    if (this.opts.autoInit) this.init();
+};
 
+ImageShowDialog.prototype.init = function () {
+    // 以下变量声明不能删除,否则异步函数无法取值.
+    var dialogId = this.opts.dialogId;
+    return Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
+        html = html.replace(/{dlgImageShow}/g, dialogId);
 
+        $('body').append(html);
+    });
+};
+
+ImageShowDialog.prototype.toggle = function (conceptId, options) {
+    this.opts = $.extend(this.opts, options);
+
+    var div = $('#' + this.opts.dialogId);
+    div.find('.nagu-image-content').empty();
+
+    Nagu.CM.get(conceptId).done(function (concept) {
+        div.find('h3').text(concept.FriendlyNames[0]);
+    });
+    Nagu.CM.getPropertyValues(conceptId, Nagu.Image.Url).done(function (fss) {
+        $.each(fss, function (i, fs) {
+            if (fs.Object.Value) {
+                var img = $('<img />').attr('src', fs.Object.Value);
+                div.find('.nagu-image-content').append(img);
+            }
+        });
+    });
+    div.modal('toggle');
+};
 
 
 

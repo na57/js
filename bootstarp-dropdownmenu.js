@@ -123,7 +123,7 @@ MenuItem.TypeMIFunctions[Nagu.Concepts.Article] = function(conceptId, options){
     };
     var opts = $.extend(defaults,options);
 
-    return articleShowMI = new MenuItem({
+    return new MenuItem({
         text: '查看内容',
         click: function () {
                 opts.articleShowDialog.toggle(conceptId);
@@ -131,6 +131,19 @@ MenuItem.TypeMIFunctions[Nagu.Concepts.Article] = function(conceptId, options){
     });
 };
 
+MenuItem.TypeMIFunctions[Nagu.Concepts.NaguImage] = function (conceptId, options) {
+    var defaults = {
+        imageShowDialog: new ImageShowDialog()
+    };
+    var opts = $.extend(defaults, options);
+
+    return new MenuItem({
+        text: '查看图片',
+        click: function () {
+            opts.imageShowDialog.toggle(conceptId);
+        }
+    });
+};
 
 /******* Menu 类 ******************************************************************************************************************/
 function Menu(menuItems, options) {
