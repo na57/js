@@ -44,11 +44,23 @@ Nagu.init = function (options) {
     var defaults = {
         host: "",
         appId: "",
-        iframeId: 'pmIframe'
+        useIframe: false,
+        iframeId: ''
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
-    Nagu.CM = new ConceptManager(opts.host);
+
+    // 确保页面上有iframe
+    if (opts.useIframe && opts.iframeId == '') {
+        opts.iframeId = 'pmIframe' + randomInt();
+        var iframe = $('<iframe style="width: 0px; height: 0px; display: none; overflow: hidden;" src="http://nagu.cc/apps/pmproxy.html"></iframe>');
+        iframe.attr('id',opts.iframeId).appendTo($('body'));
+    }
+    // 初始化messenger
+    if (opts.useIframe) {
+        Nagu.Messenger = Messenger.initInParent(document.getElementById(opts.iframeId));
+    }
+    Nagu.CM = new ConceptManager(opts);
     Nagu.SM = new StatementManager(opts.host);
     Nagu.MM = new MemberManager(opts.host);
     Nagu.DialogM = new DialogManager();
@@ -123,28 +135,83 @@ SayManager.prototype.status = function (statementId) {
 function ConceptManager(options) {
     var defaults = {
         host: "",
-        iframeId: 'pmIframe'
+        iframeId: '',
+        useIframe: false
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
     this.host = this.opts.host;
+    if (this.opts.useIframe && this.opts.iframeId == '') {
+        this.opts.iframeId = 'pmIframe' + randomInt();
+        var iframe = $('<iframe style="width: 0px; height: 0px; display: none; overflow: hidden;" src="http://nagu.cc/apps/pmproxy.html"></iframe>');
+        iframe.attr('id', this.opts.iframeId).appendTo($('body'));
+    }
+
+    
 }
 ConceptManager.ConceptCache = new Array();
+
+ConceptManager.send = function (message, iframeId) {
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+
+    // 初始化messenger
+    if (Nagu.Messenger === undefined) {
+        Nagu.Messenger = Messenger.initInParent(document.getElementById(iframeId));
+    }
+
+    // 接收数据
+    var callback = function (message) {
+        /*
+        message格式：
+        message.url: 将被post的地址；
+        message.data: 将被post的数据；
+        message.result: post返回的数据
+        message.done: 执行状态，true：成功，false：失败.
+        */
+        if (message.done) {
+            dtd.resolve(message);
+        } else {
+            dtd.reject(message);
+        }
+    };
+
+    if (window.detachEvent) {
+        window.detachEvent('onmessage', obj['messagecallback']);
+        window['messagecallback'] = null;
+    } else
+        window.removeEventListener('message', callback, false);
+    Nagu.Messenger.onmessage = callback;
+
+
+    Nagu.Messenger.send(message);
+
+    return dtd.promise();
+};
 ConceptManager.prototype.get = function (id) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var result = ConceptManager.getCachedConcept(id);
     if (result === undefined || result == null) {
-        $.getJSON(this.host + "/ConceptApi/Get/" + id).done(function (concept) {
-            //ConceptManager.ConceptCache[id] = concept;
-            ConceptManager.setCachedConcept(concept);
-            dtd.resolve(concept);
-        }).fail(function () {
-            alert('getConcept失败，conceptId:' + id);
-            dtd.reject();
-        });
+        if (this.opts.useIframe) {
+            ConceptManager.send({
+                url: "http://nagu.cc/ConceptApi/Get/" + id
+            }, this.opts.iframeId).done(function (message) {
+                if (message.done) {
+                    ConceptManager.setCachedConcept(message.result);
+                    dtd.resolve(message.result);
+                } else {
+                    dtd.reject();
+                }
+            });
+        } else {
+            $.getJSON(this.host + "/ConceptApi/Get/" + id).done(function (concept) {
+                ConceptManager.setCachedConcept(concept);
+                dtd.resolve(concept);
+            }).fail(function () {
+                dtd.reject();
+            });
+        }
     }
     else {
-        //dtd.resolve(ConceptManager.ConceptCache[id]);
         dtd.resolve(ConceptManager.getCachedConcept(id));
     }
     return dtd.promise(); // 返回promise对象
@@ -394,7 +461,6 @@ StatementManager.prototype.create = function (subjectId, stype, predicateId, obj
         otype: otype,
         appId: appId
     };
-    console.log('StatementManager.create:::' + $.param(params));
     return $.post("/StatementApi/Create", params);
 };
 StatementManager.prototype.findBySP = function (subject, stype, predicate, options) {
@@ -547,7 +613,6 @@ function propertyValuesFormBaseClass(subject, sType, rdfType, appId) {
             rdfType: rdfType,
             appId: appId
         };
-        console.log('propertyValuesFormBaseClass::::' + $.param(params));
         $.getJSON(host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + subject, params).done(function (pvs) {
             PvsFromBaseClass[subject][rdfType] = pvs;
             dtd.resolve(pvs);

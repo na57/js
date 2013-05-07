@@ -205,13 +205,11 @@ function addConceptPropertyValue(subject, stype, propertyId, objectFn, objectId,
 $.fn.appendMorpheme = function (morpheme) {
     var ph = $(this);
     if (morpheme.ConceptId) {
-        console.log("morpheme.ConceptId");
         return ph.appendConcept(morpheme.ConceptId);
     }
     else if (morpheme.Value)
         return renderLiteral(morpheme, ph);
     else if (morpheme.StatementId) {
-        console.log("morpheme.StatementId");
         return renderStatement(morpheme, ph);
     }
     var dtd = $.Deferred();
@@ -232,13 +230,11 @@ $.fn.appendConcept = function (cid) {
 
 function renderMorpheme2(morpheme, ph) {
     if (morpheme.ConceptId) {
-        console.log("morpheme.ConceptId");
         return ph.appendConcept(morpheme.ConceptId);
     }
     else if (morpheme.Value)
         return renderLiteral(morpheme, ph);
     else if (morpheme.StatementId) {
-        console.log("morpheme.StatementId");
         return renderStatement(morpheme, ph);
     }
     else return "unknown";
@@ -412,7 +408,6 @@ function SaidStatusButton(sid, onChanged) {
     var sm = new SayManager();
     sm.status(this.sid).done(function (fsId, hasSaid) {
         var btn = $('.nagu-said-status-toggler');
-        console.log("hasSaid::::::::::::::::" + hasSaid);
         if (hasSaid) btn.text('取消星标').one('click', function () { toggleBtnSaidStatus(this.onchanged); });
         else btn.text('加注星标').one('click', function () { toggleBtnSaidStatus(this.onchanged); });
     });
@@ -599,8 +594,7 @@ AddTypeDialog.prototype.init = function () {
     var collapseConcept = this.opts.collapseConceptId;
     var collapseSystem = this.opts.collapseSystemId;
     var listAppsId = this.opts.listAppsId;
-
-    return $.get(this.opts.templateUrl).done(function (html) {
+    Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{collapseConcept}/g, collapseConcept);
         html = html.replace(/{collapseSystem}/g, collapseSystem);
         html = html.replace(/{listApps}/g, listAppsId);
@@ -636,34 +630,9 @@ AddTypeDialog.AddType = function(subjectId, typeId, options){
     return Nagu.CM.addRdfType(subjectId, typeId, {
             appId: opts.appId 
         }).done(function (fs) {
-            console.log('成功添加Type,TypeId: ' + typeId);
-            console.log('执行AddTypeDialog.onTypeAdded:::fsId=' + fs.StatementId);
             AddTypeDialog.onTypeAdded(fs);
         });
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -673,7 +642,7 @@ function AddPropertyValueDialog(options) {
         host: "",
         appId: "",
         templateUrl: "/Apps/private/dialog/addPropertyValue.html",
-        dialogId: "dlgAddPropertyValue" + randomInt(),
+        dialogId: "dlgAddPropertyValue", //+ randomInt(),
         fnId: "txtFn_" + randomInt(),
         valueId: "txtValue_" + randomInt(),
         onlyMeId: 'cbOnlyMe_' + randomInt(),
@@ -683,7 +652,7 @@ function AddPropertyValueDialog(options) {
         btnNewId: 'btnNew' + randomInt(),
         listAppsId: 'listAppsId' + randomInt(),
         autoInit: true,
-        added: function (fs) { console.log('property value added'); }
+        added: function (fs) { }
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
@@ -697,6 +666,7 @@ AddPropertyValueDialog.prototype.setOptions = function (options) {
 };
 
 AddPropertyValueDialog.prototype.init = function () {
+    if ($('body #' + this.opts.dialogId).length > 0) return;
     // 以下变量声明不能删除,否则异步函数无法取值.
     var dialogId = this.opts.dialogId;
     var txtFnId = this.opts.fnId;
@@ -850,7 +820,7 @@ function ArticleShowDialog(options) {
 ArticleShowDialog.prototype.init = function () {
     // 以下变量声明不能删除,否则异步函数无法取值.
     var dialogId = this.opts.dialogId;
-    return $.get(this.opts.templateUrl).done(function (html) {
+    return Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{dlgArticleShow}/g, dialogId);
 
         $('body').append(html);
@@ -927,7 +897,6 @@ ConceptDetailPanel.prototype.show = function (placeHolder) {
     placeHolder.append(this.divDetail).append(this.divFromTypes).append(this.divProperties);
 };
 
-
 ConceptDetailPanel.prototype.showDetail = function(){
     if(this.divDetail === undefined)
         this.divDetail = newDiv().addClass('nagu-concept-detail');
@@ -962,7 +931,6 @@ ConceptDetailPanel.getFunction_RenderRichTitle = function (createConceptDialog) 
     };
 };
 
-
 // 返回一个通用的,显示"富功能"的renderValues回调函数
 ConceptDetailPanel.getFunction_renderRichValues = function (changed) {
     return function (ph, values, valueFss) {
@@ -987,6 +955,14 @@ ConceptDetailPanel.getFunction_renderRichValues = function (changed) {
     }
 };
 
+ConceptDetailPanel.renderProperty = function (placeHolder, propertyId, subjectId) {
+    var cm = new ConceptManager();
+    // 显示属性:
+    cm.get(propertyId).done(function (p) {
+        placeHolder.append(p.FriendlyNames[0]);
+    });
+}
+
 // 返回一个通用的,显示"富功能"的renderProperty回调函数
 ConceptDetailPanel.getFunction_renderRichProperty = function (addValueDialog) {
     return function (placeHolder, propertyId, subjectId) {
@@ -1004,30 +980,37 @@ ConceptDetailPanel.getFunction_renderRichProperty = function (addValueDialog) {
 };
 
 // 返回一个具有"下拉菜单"的renderProperty回调函数
-ConceptDetailPanel.getFunction_renderProperty3 = function (addValueDialog) {
+ConceptDetailPanel.getFunction_renderProperty3 = function (options) {
+    var defaults = {
+        dlgAddPropertyValue: new AddPropertyValueDialog(),
+        said: function () { }
+    };
+    var opts = $.extend(defaults, options);
+
     return function (placeHolder, propertyId, subjectId) {
 
-        var cm = new ConceptManager();
         // 显示属性:
-        cm.get(propertyId).done(function (p) {
+        Nagu.CM.get(propertyId).done(function (p) {
             var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + propertyId);
             var miAddValue = new MenuItem({
                 text: '添加属性值',
                 click: function () {
-                    addValueDialog.toggle(subjectId, Nagu.MType.Concept, p.ConceptId,
+                    opts.dlgAddPropertyValue.toggle(subjectId, Nagu.MType.Concept, p.ConceptId,
                     {
                         h3: '为属性“' + p.FriendlyNames[0] + '”添加属性值'
                     });
                 }
             });
-            placeHolder.conceptMenu([miGo, miAddValue], {
+            // 为每一个属性值生产一个下拉菜单:
+            //var miSaid = MenuItem.getSaidMI(v, {
+            //    changed: opts.said
+            //});
+            placeHolder.conceptMenu([miAddValue, miGo], {
                 text: p.FriendlyNames[0]
             });
         });
     };
 };
-
-
 
 // 具有"超链接"的renderProperty回调函数
 ConceptDetailPanel.renderProperty4 = function (placeHolder, propertyId, subjectId) {
@@ -1038,7 +1021,6 @@ ConceptDetailPanel.renderProperty4 = function (placeHolder, propertyId, subjectI
         a.text(p.FriendlyNames[0]).appendTo(placeHolder);
     });
 };
-
 
 // 返回一个通用的,显示"富功能"的renderPropertyValues回调函数
 ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
@@ -1093,13 +1075,11 @@ ConceptDetailPanel.getFunction_renderRichPropertyValues = function (changed) {
     }
 };
 
-
-
 // 返回一个通用的,显示"富功能"的renderPropertyValues回调函数
 ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
     var defaults = {
         changed: function(){},
-        articleShowDialog: undefined
+        articleShowDialog: new ArticleShowDialog()
     };
     var opts = $.extend(defaults, options);
 
@@ -1118,70 +1098,50 @@ ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
 
             // 当两者不同时，有可能出现属性值在Subject位置的情况。
             if (v.Predicate.ConceptId != propertyId) {
-                
+                if (v.Object.ConceptId == subjectId) {
+                    valueConcept = v.Subject;
+                } else {
+                    valueConcept = v.Object;
+                }
             }
             var menu;
             var mis = new Array();
 
-            // 为每一个属性值生产一个下拉菜单:
-            var miSaid = MenuItem.getSaidMI(v, {
-                changed: opts.changed
-            });
-            mis.push(miSaid);
-
-            if (valueConcept.ConceptId) {
-                var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + valueConcept.ConceptId);
-                mis.push(miGo);
-
+            //if (valueConcept.ConceptId) {
+            //    var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + valueConcept.ConceptId);
+            //    mis.push(miGo);
+            //}
+            $.when(
+                Nagu.MM.check().done(function (status) {
+                    if (status.nagu) {
+                        // 为每一个属性值生产一个下拉菜单:
+                        var miSaid = MenuItem.getSaidMI(v, {
+                            changed: opts.changed
+                        });
+                        mis.push(miSaid);
+                    }
+                }),
                 // 考察属性值的类型，根据不同类型插入不同的菜单
-                Nagu.CM.get(valueConcept.ConceptId).done(function(concept){
-                    $.each(concept.TypeFss, function(i, typeFs){
-                        if(typeFs.Object.ConceptId == Nagu.Concepts.Article){
-                            var articleShowMI = new MenuItem({
-                                text: '查看内容',
-                                click: function(){
-                                    if(opts.articleShowDialog !== undefined){
-                                        opts.articleShowDialog.toggle(valueConcept.ConceptId);
-                                    }
-                                }
+                MenuItem.getTypeMIs(valueConcept.ConceptId,opts)).done(function (a1, typeMIs) {
+                    menu = new Menu(mis.concat(typeMIs), {
+                        appended: function (li, a, ul) {
+                            var cm = new ConceptManager();
+
+                            if (valueConcept.Value) {
+                                a.text(valueConcept.Value);
+                                if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
+                            } else cm.get(valueConcept.ConceptId).done(function (c) {
+                                a.text(c.FriendlyNames[0]);
+                                if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
                             });
-                            menu.insert(articleShowMI);
+
                         }
                     });
+                    menu.appendTo(ul);
                 });
-            }
-
-            
-
-            menu = new Menu(mis, {
-                appended: function (li, a, ul) {
-                    var cm = new ConceptManager();
-
-                    if (valueConcept.Value) {
-                        a.text(valueConcept.Value);
-                        if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
-                    } else cm.get(valueConcept.ConceptId).done(function (c) {
-                        a.text(c.FriendlyNames[0]);
-                        if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
-                    });
-
-                }
-            });
-            menu.appendTo(ul);
         });
     }
 };
-
-
-
-
-
-
-
-
-
-
-
 
 // 一个通用的renderType方法,使用手风琴方式展示各类型的数据
 ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts) {
@@ -1235,8 +1195,6 @@ ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts)
     });
 };
 
-
-
 // 一个通用的renderType方法,使用手风琴方式展示各类型的数据，适用于不登录的情况
 ConceptDetailPanel.renderType3 = function (conceptId, placeHolder, typeFs, opts) {
     // 保证Object是Concept，不是则跳出：
@@ -1278,18 +1236,7 @@ ConceptDetailPanel.renderType3 = function (conceptId, placeHolder, typeFs, opts)
     });
 };
 
-
-
-
-
-ConceptDetailPanel.renderProperty = function (placeHolder, propertyId, subjectId) {
-    var cm = new ConceptManager();
-    // 显示属性:
-    cm.get(propertyId).done(function (p) {
-        placeHolder.append(p.FriendlyNames[0]);
-    });
-}
-
+// 默认显示属性值的方法
 ConceptDetailPanel.renderPropertyValues = function (placeHolder, propertyId, values, subjectId) {
     if (values.length == 0) { placeHolder.text('无属性值'); return; }
 
@@ -1390,7 +1337,8 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
         renderPropertyAndValues: ConceptDetailPanel.renderPropertyAndValues,
         renderProperty: ConceptDetailPanel.renderProperty,
         renderType: ConceptDetailPanel.renderType3,
-        renderPropertyValues: ConceptDetailPanel.renderPropertyValues
+        //renderPropertyValues: ConceptDetailPanel.renderPropertyValues
+        renderPropertyValues: ConceptDetailPanel.get_renderPropertyValues2()
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -1419,7 +1367,6 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
     return div;
 };
 
-
 // #6
 $.fn.conceptProperties = function (conceptId, options) {
     var defaults = {
@@ -1427,7 +1374,8 @@ $.fn.conceptProperties = function (conceptId, options) {
         appId: "",
         renderPropertyAndValues: ConceptDetailPanel.renderPropertyAndValues,
         renderProperty: ConceptDetailPanel.renderProperty,
-        renderPropertyValues: ConceptDetailPanel.renderPropertyValues
+        //renderPropertyValues: ConceptDetailPanel.renderPropertyValues
+        renderPropertyValues: ConceptDetailPanel.get_renderPropertyValues2()
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -1635,7 +1583,7 @@ function SelectConceptDialog(options) {
         resultId: 'result' + randomInt(),
         typeId: '',
         autoInit: true,
-        selected: function (concept, appId) { console.log('concept selected'); }
+        selected: function (concept, appId) { }
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
@@ -1703,7 +1651,7 @@ function SearchConceptDialog(options) {
         dialogId: 'dlgSearch' + randomInt(),
         typeId: '',
         autoInit: true,
-        selected: function (concept, appId) { console.log('concept selected'); }
+        selected: function (concept, appId) {  }
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);

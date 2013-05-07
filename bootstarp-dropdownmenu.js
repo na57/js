@@ -1,6 +1,6 @@
 ﻿/******* MenuItem 类 ******************************************************************************************************************/
 /*
-参考手册: #2
+参考手册: #8
 */ 
 
 function MenuItem(options) {
@@ -16,8 +16,10 @@ function MenuItem(options) {
 MenuItem.prototype.appendTo = function (placeHolder) {
     var menuA = newA().text(this.opts.text);
     menuA.click(this.opts.click);
+    //menuA.prepend($('<i></i>').addClass('icon-star'));
 
     var menuLi = newLi();
+    
     menuLi.append(menuA);
     placeHolder.append(menuLi);
 
@@ -80,29 +82,54 @@ MenuItem.getDirectMI = function (text, url) {
     });
 };
 
+// 根据Concept的type，返回相应的菜单项
+MenuItem.getTypeMIs = function (conceptId, options) {
+    var dtd = $.Deferred();
+    var mis = new Array();
+    if(conceptId === undefined){
+        dtd.resolve(mis);
+    } else {
+        Nagu.CM.get(conceptId).done(function (concept) {
+            $.each(concept.TypeFss, function (i, typeFs) {
+                var typeId = typeFs.Object.ConceptId;
+                if (typeId == Nagu.Concepts.NaguConcept) return;
 
+                if (MenuItem.TypeMIFunctions[typeId] !== undefined) {
+                    var mi = MenuItem.TypeMIFunctions[typeId](conceptId, options);
+                    mis.push(mi);
+                }
+            });
 
-//// 返回一个通用的,用于添加或删除星标的MenuItem对象
-//MenuItem.getImageMI = function (options) {
-//    var defaults = {
-//        //imgUrl: ''
-//    };
-//    // Extend our default options with those provided.    
-//    var opts = $.extend(defaults, options);
+            // 若当前Concept无任何特殊显示的类型，则添加默认菜单
+            if (mis.length == 0) {
+                var miGo = MenuItem.TypeMIFunctions[Nagu.Concepts.NaguConcept](conceptId);
+                mis.push(miGo);
+            }
+            dtd.resolve(mis);
+        }).fail(function () { dtd.resolve(mis) });
+    }
+    return dtd.promise();
+};
 
-//    return new MenuItem({
-//        text: '显示图片',
-//        click: function () {
-//            
-//        }
-//    });
-//}
+MenuItem.TypeMIFunctions = new Array();
+MenuItem.TypeMIFunctions[Nagu.Concepts.NaguConcept] = function(conceptId){
+    var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + conceptId);
+    return miGo;
+};
 
+MenuItem.TypeMIFunctions[Nagu.Concepts.Article] = function(conceptId, options){
+    var defaults = {
+        articleShowDialog: new ArticleShowDialog()
+    };
+    var opts = $.extend(defaults,options);
 
-
-
-
-
+    return articleShowMI = new MenuItem({
+        text: '查看内容',
+        click: function () {
+                opts.articleShowDialog.toggle(conceptId);
+        }
+    });
+};
 
 
 /******* Menu 类 ******************************************************************************************************************/
@@ -130,7 +157,7 @@ Menu.prototype.appendTo = function (placeHolder) {
     togglerA.attr('href', '#' + menuId).attr('data-toggle', 'dropdown');
     if (this.opts.showCaret) togglerA.append(newTag('b').addClass('caret'));
 
-    var ulItems = this.opts.ulItems//newTag('ul').addClass('dropdown-menu');
+    var ulItems = this.opts.ulItems
 
     var ulId = 'ul_' + randomInt();
     $.each(this.items, function (i, item) {
