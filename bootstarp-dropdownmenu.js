@@ -145,6 +145,20 @@ MenuItem.TypeMIFunctions[Nagu.Concepts.NaguImage] = function (conceptId, options
     });
 };
 
+MenuItem.TypeMIFunctions[Nagu.Rdf.Bag] = function (conceptId, options) {
+    var defaults = {
+        bagShowDialog: new BagShowDialog()
+    };
+    var opts = $.extend(defaults, options);
+
+    return new MenuItem({
+        text: '查看集合项目',
+        click: function () {
+            opts.bagShowDialog.toggle(conceptId);
+        }
+    });
+};
+
 /******* Menu 类 ******************************************************************************************************************/
 function Menu(menuItems, options) {
     this.items = menuItems;

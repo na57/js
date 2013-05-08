@@ -282,7 +282,52 @@ function renderStatement(statement, ph) {
 }
 
 
+$.fn.appendStatement = function(statementId){
+    var dtd = $.Deferred();
 
+    var ph = $(this);
+    var a = newA().append(loadingImg()).appendTo(ph);
+
+    Nagu.SM.get(statementId).done(function (statement) {
+        Nagu.SM.findBySP(statement.Predicate.ConceptId, Nagu.MType.Concept, Nagu.Concepts.NaguFormatString).done(function (fs) {
+            a.remove();
+            var phSubid = 'sub_' + randomInt();
+            var phPreId = 'pre_' + randomInt();
+            var phObjId = 'obj_' + randomInt();
+            if (fs.length) {
+
+                var t = fs[0].Object.Value.replace(/{subject}/g, '<span id="' + phSubid + '" />');
+                var t = t.replace(/{predicate}/g, '<span id="' + phPreId + '" />');
+                var t = t.replace(/{object}/g, '<span id="' + phObjId + '" />');
+                ph.append(t);
+
+                renderMorpheme2(statement.Subject, $('#' + phSubid));
+                renderMorpheme2(statement.Predicate, $('#' + phPreId));
+                renderMorpheme2(statement.Object, $('#' + phObjId));
+
+            }
+            else {
+                ph.append('{ ');
+                ph.append(newSpan(phSubid));
+                ph.append(', ');
+                ph.append(newSpan(phPreId));
+                ph.append(', ');
+                ph.append(newSpan(phObjId));
+                ph.append(' }');
+
+                renderMorpheme2(statement.Subject, $('#' + phSubid));
+                renderMorpheme2(statement.Predicate, $('#' + phPreId));
+                renderMorpheme2(statement.Object, $('#' + phObjId));
+            }
+
+            dtd.resolve(ph);
+
+        });
+    });
+    
+
+    return dtd.promise();
+};
 
 
 
@@ -891,9 +936,44 @@ ImageShowDialog.prototype.toggle = function (conceptId, options) {
 };
 
 
+/******* BagShowDialog 类 ***********************************************************************************************************************************/
+function BagShowDialog(options) {
+    var defaults = {
+        host: "",
+        appId: "",
+        templateUrl: "/Apps/private/dialog/bagShow.html",
+        dialogId: "dlgBagShow" + randomInt(),
+        autoInit: true,
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
 
+    if (this.opts.autoInit) this.init();
+};
 
+BagShowDialog.prototype.init = function () {
+    // 以下变量声明不能删除,否则异步函数无法取值.
+    var dialogId = this.opts.dialogId;
+    return Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
+        html = html.replace(/{dlgBagShow}/g, dialogId);
+        $('body').append(html);
+    });
+};
 
+BagShowDialog.prototype.toggle = function (conceptId, options) {
+    this.opts = $.extend(this.opts, options);
+
+    var div = $('#' + this.opts.dialogId);
+    div.find('.nagu-bag-content').empty();
+
+    Nagu.CM.get(conceptId).done(function (concept) {
+        div.find('h3').text(concept.FriendlyNames[0]);
+    });
+    Nagu.CM.getPropertyValues(conceptId, Nagu.Rdf.Li).done(function (fss) {
+        div.find('.nagu-bag-content').conceptList(fss);
+    });
+    div.modal('toggle');
+};
 
 
 
@@ -1144,11 +1224,7 @@ ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
             }
             var menu;
             var mis = new Array();
-
-            //if (valueConcept.ConceptId) {
-            //    var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + valueConcept.ConceptId);
-            //    mis.push(miGo);
-            //}
+            
             $.when(
                 Nagu.MM.check().done(function (status) {
                     if (status.nagu) {
@@ -1160,23 +1236,27 @@ ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
                     }
                 }),
                 // 考察属性值的类型，根据不同类型插入不同的菜单
-                MenuItem.getTypeMIs(valueConcept.ConceptId,opts)).done(function (a1, typeMIs) {
-                    menu = new Menu(mis.concat(typeMIs), {
-                        appended: function (li, a, ul) {
-                            var cm = new ConceptManager();
+                MenuItem.getTypeMIs(valueConcept.ConceptId, opts)
+            ).done(function (a1, typeMIs) {
+                mis = mis.concat(typeMIs);
+                mis.push(MenuItem.getDirectMI('查看语句',
+                '/apps/public/statement.html?id=' + v.StatementId));
+                menu = new Menu(mis, {
+                    appended: function (li, a, ul) {
+                        var cm = new ConceptManager();
 
-                            if (valueConcept.Value) {
-                                a.text(valueConcept.Value);
-                                if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
-                            } else cm.get(valueConcept.ConceptId).done(function (c) {
-                                a.text(c.FriendlyNames[0]);
-                                if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
-                            });
+                        if (valueConcept.Value) {
+                            a.text(valueConcept.Value);
+                            if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
+                        } else cm.get(valueConcept.ConceptId).done(function (c) {
+                            a.text(c.FriendlyNames[0]);
+                            if (v.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
+                        });
 
-                        }
-                    });
-                    menu.appendTo(ul);
+                    }
                 });
+                menu.appendTo(ul);
+            });
         });
     }
 };
@@ -1237,8 +1317,8 @@ ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts)
 ConceptDetailPanel.renderType3 = function (conceptId, placeHolder, typeFs, opts) {
     // 保证Object是Concept，不是则跳出：
     if (typeFs.Object.ConceptId === undefined) return;
-
     if (typeFs.Object.ConceptId == Nagu.Concepts.NaguConcept) return;
+
     var accordionId = placeHolder.attr('id')
     if (accordionId == "") {
         accordionId = 'accordion_' + randomInt();
@@ -1320,7 +1400,6 @@ ConceptDetailPanel.renderType1 = function (conceptId, placeHolder, typeFs) {
     });
 }
 
-
 // #4
 $.fn.conceptShow = function (conceptId, options) {
     var defaults = {
@@ -1366,7 +1445,6 @@ $.fn.conceptShow = function (conceptId, options) {
     });
 };
 
-
 // #5
 $.fn.conceptInfoFromTypes = function (conceptId, options) {
     var defaults = {
@@ -1375,7 +1453,6 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
         renderPropertyAndValues: ConceptDetailPanel.renderPropertyAndValues,
         renderProperty: ConceptDetailPanel.renderProperty,
         renderType: ConceptDetailPanel.renderType3,
-        //renderPropertyValues: ConceptDetailPanel.renderPropertyValues
         renderPropertyValues: ConceptDetailPanel.get_renderPropertyValues2()
     };
     // Extend our default options with those provided.    
@@ -1454,8 +1531,7 @@ $.fn.conceptProperties = function (conceptId, options) {
 
 
 
-
-
+/******* MorphemeDetailPanel 类 ***********************************************************************************************************************************/
 
 
 
