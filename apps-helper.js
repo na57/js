@@ -1020,8 +1020,8 @@ ConceptDetailPanel.getFunction_renderRichProperty = function (addValueDialog) {
     };
 };
 
-// 返回一个具有"下拉菜单"的renderProperty回调函数
-ConceptDetailPanel.getFunction_renderProperty3 = function (options) {
+// #9 返回一个具有"下拉菜单"的renderProperty回调函数
+ConceptDetailPanel.get_renderProperty3 = function (options) {
     var defaults = {
         dlgAddPropertyValue: new AddPropertyValueDialog(),
         said: function () { }
@@ -1043,9 +1043,6 @@ ConceptDetailPanel.getFunction_renderProperty3 = function (options) {
                 }
             });
             // 为每一个属性值生产一个下拉菜单:
-            //var miSaid = MenuItem.getSaidMI(v, {
-            //    changed: opts.said
-            //});
             placeHolder.conceptMenu([miAddValue, miGo], {
                 text: p.FriendlyNames[0]
             });
