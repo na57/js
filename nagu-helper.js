@@ -26,13 +26,20 @@ Nagu.Concepts = {
     SystemTypeBag: '76b2ba52-0f0c-4a76-b899-65e921092c28',  // “系统预定义类型”包
     App: 'f1933904-6bac-425b-abf8-c5f4032a380f' // 描述“应用”的类
 };
+
+Nagu.Article = {
+    Content: '6bef4f02-1d1d-4161-b017-0e9e4879883c',
+    Url: ''
+};
+
 Nagu.Owl = {
     InverseOf:          'a9288b7b-927d-4cdf-b561-2043701a5ba6',
     Class:              '280ab0ee-7fda-4d29-9a0e-eed7850fe3b2'
 };
 Nagu.Rdf = {
     Bag:                'ada49e35-2c62-404e-b3df-db368149521f',
-    Li:                 '028428d9-3470-47bb-abe1-5712bc047589'
+    Li: '028428d9-3470-47bb-abe1-5712bc047589',
+    Type: "4c5b16cd-d526-48cb-948e-250ce21facc8"
 };
 
 Nagu.App = {
@@ -415,24 +422,42 @@ ConceptManager.removeCachedConcept = function (cid) {
 
 
 
+/***Morpheme操作*****************************************************************************************************************************/
+function MorphemeManager(options){
+}
 
+MorphemeManager.Cache = new Array();
+MorphemeManager.getCachedConcept = function (mid) {
+    if ($.jStorage && $.jStorage.storageAvailable()) {
+        return $.jStorage.get('morpheme_' + cid, null);
+    } else {
+        return MorphemeManager.Cache[cid];
+    }
+};
 
+MorphemeManager.setCachedConcept = function (morpheme) {
+    var mid;
+    if (morpheme.ConceptId) mid = morpheme.ConceptId;
+    else if (morpheme.StatementId) mid = morpheme.StatementId;
+    else alert('setCachedConcept error!');
 
+    if ($.jStorage && $.jStorage.storageAvailable()) {
+        $.jStorage.set('morpheme_' + mid, morpheme, {
+            // 默认存储时间为3天，为避免同时刷新，增加2个小时之内的随机时间
+            TTL: 259200000 + 7200000 * Math.random()
+        });
+    } else {
+        MorphemeManager.Cache[mid] = morpheme;
+    }
+};
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+MorphemeManager.removeCachedConcept = function (mid) {
+    if ($.jStorage && $.jStorage.storageAvailable()) {
+        $.jStorage.set('morpheme_' + mid, undefined);
+    } else {
+        MorphemeManager.Cache[mid] = undefined;
+    }
+};
 
 
 /***Statement操作*****************************************************************************************************************************/

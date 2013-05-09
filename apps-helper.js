@@ -1534,6 +1534,48 @@ $.fn.conceptProperties = function (conceptId, options) {
 /******* MorphemeDetailPanel 类 ***********************************************************************************************************************************/
 
 
+$.fn.statementProperties = function (morphemeId, options) {
+    var defaults = {
+        clearBefore: true,
+        appId: "",
+        renderPropertyAndValues: ConceptDetailPanel.renderPropertyAndValues,
+        renderProperty: ConceptDetailPanel.renderProperty,
+        renderPropertyValues: ConceptDetailPanel.get_renderPropertyValues2()
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+    if (opts.clearBefore) $(this).empty();
+
+    var ph = $(this);
+
+    ph.append(newTag('h3', { text: '属性 · · · · · ·' }));
+    var loading = loadingImg128();
+    ph.append(loading);
+
+    // 1. 获取全部属性:
+    Nagu.CM.getPropertiesAndValues(conceptId).done(function (pvs) {
+        // 如果pvs为空，则清空div:
+        if (pvs.length == 0) {
+            return div.empty();
+        }
+        // 2. 循环显示每个属性
+        var dl = newTag("dl").addClass("dl-horizontal").appendTo(div);
+        $.each(pvs, function (i, pv) {
+            var dt = newDt("dt_" + pv.Key).appendTo(dl);
+
+            // 显示属性:
+            opts.renderProperty(dt, pv.Key, conceptId);
+
+            // 显示Value
+            var dd = newDd().appendTo(dl);
+            opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId, opts);
+        });
+
+        loading.remove();
+    });
+    return div;
+};
+
 
 
 
