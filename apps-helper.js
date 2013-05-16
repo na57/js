@@ -886,6 +886,8 @@ ArticleShowDialog.prototype.toggle = function (conceptId, options) {
             }
         });
     });
+    div.find('.article-show-go-btn').attr('href', '/apps/public/concept.html?id=' + conceptId);
+
     div.modal('toggle');
 };
 
@@ -932,6 +934,8 @@ ImageShowDialog.prototype.toggle = function (conceptId, options) {
             }
         });
     });
+    div.find('.image-show-go-btn').attr('href', '/apps/public/concept.html?id=' + conceptId);
+
     div.modal('toggle');
 };
 
@@ -972,6 +976,8 @@ BagShowDialog.prototype.toggle = function (conceptId, options) {
     Nagu.CM.getPropertyValues(conceptId, Nagu.Rdf.Li).done(function (fss) {
         div.find('.nagu-bag-content').conceptList(fss);
     });
+    div.find('.bag-show-go-btn').attr('href', '/apps/public/concept.html?id=' + conceptId);
+
     div.modal('toggle');
 };
 
@@ -1929,3 +1935,50 @@ $.fn.conceptList = function (concepts, options) {
     } else { opts.btnMore.hide(); }
     return dtd.promise();
 };
+
+
+
+$.fn.btnFavorite = function (conceptId, options) {
+    var defaults = {
+        sayText: '添加收藏',
+        dontSayText: '删除收藏',
+        click: function () {
+            var a = $(this);
+            
+            var statementId = a.attr('statementId');
+            if (a.attr('statementId') != '') {
+                // 删除收藏
+            } else {
+                // 添加收藏
+                Nagu.MM.favorite(conceptId).done(function (fs) {
+                    a.text(opts.dontSayText).prepend(Icon('icon-star-empty'));
+                    a.addClass('btn-danger');
+                    a.attr('statementId', fs.StatementId);
+                    opts.changed(fs);
+                });
+            }
+        },
+        changed: function (data) { }
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    var ph = $(this).attr('statementId','');
+    ph.attr('conceptId', conceptId).addClass('btn btn-primary');
+    ph.unbind('click').click(opts.click);
+    Nagu.MM.getMe().done(function (me) {
+        Nagu.SM.findBySPO(me.Id, Nagu.User.Favorite, conceptId, {
+            appId: me.Id
+        }).done(function (fss) {
+            if (fss.length > 0 && fss[0] != null) {
+                ph.text(opts.dontSayText).prepend(Icon('icon-star-empty'));
+                ph.addClass('btn-danger');
+                ph.attr('statementId', fss[0].StatementId);
+            } else {
+                ph.text(opts.sayText).prepend(Icon('icon-empty'));
+                ph.removeClass('btn-danger');
+            }
+        });
+    });
+    return ph;
+}
