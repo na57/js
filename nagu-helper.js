@@ -51,6 +51,10 @@ Nagu.Image = {
     Url: 'ac6dc594-20b3-4f94-b628-a3a098c49308'
 };
 
+Nagu.User = {
+    Favorite: '985902bb-34a5-454a-b4be-8771d511635b'
+};
+
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 Nagu.init = function (options) {
     var defaults = {
@@ -76,6 +80,7 @@ Nagu.init = function (options) {
     Nagu.SM = new StatementManager(opts.host);
     Nagu.MM = new MemberManager(opts.host);
     Nagu.DialogM = new DialogManager();
+    Nagu.SayM = new SayManager();
 };
 Nagu.init();
 
@@ -542,6 +547,36 @@ StatementManager.prototype.findByPO = function (predicateId, objectId, oType, op
     return dtd.promise();
 };
 
+StatementManager.prototype.findBySPO = function (subjectId,  predicateId, objectId, options) {
+    var defaults = {
+        appId: '',
+        stype: Nagu.MType.Concept,
+        otype: Nagu.MType.Concept
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    var cacheKey = StatementManager.generateCacheKey('', subjectId, predicateId, objectId, opts.appId);
+    if (StatementManager.StatementsCache[cacheKey] === undefined) {
+        $.post(host + "/MorphemeApi/FindBySPO/" + subjectId,
+        {
+            stype: opts.stype,
+            predicateId: predicateId,
+            objectId: objectId,
+            otype: opts.otype,
+            appId: opts.appId
+        }).done(function (fss) {
+            Statments[StatementManager.StatementsCache] = fss;
+            dtd.resolve(fss);
+        }).fail(function () { dtd.reject(); });
+    } else {
+        dtd.resolve(Statments[StatementManager.StatementsCache]);
+    }
+    return dtd.promise();
+};
+
+
 StatementManager.prototype.findSByPO = function (predicateId, objectId, oType, options) {
     var defaults = {
         appId: ""
@@ -724,6 +759,19 @@ MemberManager.prototype.manageableApps = function (userId) {
     }
     return dtd.promise();
 }
+
+// 添加对指定Concept的收藏
+MemberManager.prototype.favorite = function (conceptId) {
+    var dtd = $.Deferred();
+
+    this.getMe().done(function (me) {
+        Nagu.SM.create(me.Id, Nagu.MType.Concept, Nagu.User.Favorite, conceptId, Nagu.MType.Concept, me.Id).done(function (fs) {
+            dtd.resolve(fs);
+        });
+    });
+
+    return dtd.promise();
+};
 
 
 
