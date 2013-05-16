@@ -10,7 +10,7 @@
 
     // 1. accordion-body
     var collapseId = 'collapse_' + randomInt();
-    var divBody = newDiv().attr('id', collapseId).addClass('accordion-body collapse').css('height', '0px');
+    var divBody = newDiv().attr('id', collapseId).addClass('accordion-body collapse').css('height', '0px').css('overflow-y', 'visible');
     var divInner = newDiv().addClass('accordion-inner').appendTo(divBody);
 
     // 2. accordion-heading
