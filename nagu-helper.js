@@ -703,13 +703,20 @@ MemberManager.prototype.getMe = function () {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     if (MemberManager.me === undefined)
         $.post("/MemberApi/GetMe").done(function (me) {
-            if (me.Id !== undefined) {
+            if (me.ret == 0) {
                 MemberManager.me = me;
-                dtd.resolve(me);
-            } else dtd.reject();
-        });
+            }
+            dtd.resolve(me);
+        }).fail(function () { dtd.reject(); });
     else dtd.resolve(MemberManager.me);
     return dtd.promise();
+};
+
+MemberManager.prototype.loginFromNagu = function (username, password) {
+    return $.post(this.host + "/MemberApi/Login", {
+        username: username,
+        password: password
+    });
 };
 
 // 用于检查用户是否已登录
@@ -728,7 +735,7 @@ MemberManager.prototype.check = function () {
     }
 
     this.getMe().done(function (me) {
-        status.nagu = me !== undefined;
+        status.nagu = (me.ret == 0);
         dtd.resolve(status);
     }).fail(function () {
         dtd.resolve(status);
@@ -773,7 +780,11 @@ MemberManager.prototype.favorite = function (conceptId) {
     return dtd.promise();
 };
 
-
+MemberManager.prototype.logout = function () {
+    return $.post("/MemberApi/Logout").done(function (result) {
+        MemberManager.me = undefined;
+    })
+};
 
 
 

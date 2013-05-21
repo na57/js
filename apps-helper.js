@@ -837,6 +837,40 @@ AddPropertyValueDialog.AddTextValue = function (options) {
     });
 }
 
+AddPropertyValueDialog.AddImageValue = function (options) {
+    var defaults = {
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    var fileInput = opts.dialog.find('#fileImage');
+
+    // 初始化上传控件
+    fileInput.fileupload({
+        dataType: 'json',
+        url: 'https://graph.qq.com/t/add_pic_t ',
+        done: function (e, data) {
+            $.each(data.files, function (index, file) {
+                $('<p/>').text(file.name).appendTo(document.body);
+            });
+        }
+    });
+    Nagu.MM.getMe().done(function (me) {
+
+        // 上传图片：
+        fileInput.fileupload('add', {
+            fileInput: fileInput,
+            formData: {
+                oauth_consumer_key: '100321920',
+                access_token: me.QcAccessToken,
+                openid: me.QcOpenId,
+                format: 'json',
+                content: '上传图片test1365686697274'
+            },
+            forceIframeTransport: true
+        });
+    });
+};
 
 
 
@@ -983,6 +1017,44 @@ BagShowDialog.prototype.toggle = function (conceptId, options) {
 
 
 
+
+
+/******* BagShowDialog 类 ***********************************************************************************************************************************/
+function LoginDialog(options) {
+    var defaults = {
+        host: "",
+        appId: "",
+        templateUrl: "/Apps/private/dialog/login.html",
+        dialogId: "dlgLogin" + randomInt(),
+        autoInit: true,
+        success: function (me) { },
+        fail: function () { }
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+
+    LoginDialog.Success = this.opts.success;
+    LoginDialog.Fail = this.opts.fail;
+
+    if (this.opts.autoInit) this.init();
+};
+
+LoginDialog.prototype.init = function () {
+    // 以下变量声明不能删除,否则异步函数无法取值.
+    var dialogId = this.opts.dialogId;
+    return Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
+        html = html.replace(/{dlgLogin}/g, dialogId);
+        $('body').append(html);
+    });
+};
+
+LoginDialog.prototype.toggle = function (options) {
+    this.opts = $.extend(this.opts, options);
+
+    var div = $('#' + this.opts.dialogId);
+
+    div.modal('toggle');
+};
 
 
 
