@@ -703,6 +703,7 @@ MemberManager.prototype.getMe = function () {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     if (MemberManager.me === undefined)
         $.post("/MemberApi/GetMe").done(function (me) {
+            log('getMe()::me.ret = ' + me.ret);
             if (me.ret == 0) {
                 MemberManager.me = me;
             }
@@ -847,4 +848,11 @@ DialogManager.prototype.get = function (url) {
     }
 
     return dtd.promise();
+}
+
+
+
+
+function log(text) {
+    $('#txtDebug').val($('#txtDebug').val() + text + '\r\n');
 }
