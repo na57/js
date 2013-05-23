@@ -704,8 +704,11 @@ MemberManager.prototype.getMe = function () {
     if (MemberManager.me === undefined)
         $.post("/MemberApi/GetMe").done(function (me) {
             log('getMe()::me.ret = ' + me.ret);
+
             if (me.ret == 0) {
                 MemberManager.me = me;
+            } else {
+                log('getMe()::me.auth = ' + me.auth);
             }
             dtd.resolve(me);
         }).fail(function () { dtd.reject(); });
