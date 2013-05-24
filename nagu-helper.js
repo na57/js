@@ -383,11 +383,32 @@ ConceptManager.prototype.isImage = function (conceptId) {
     return dtd.promise();
 };
 
-ConceptManager.prototype.getPropertyValues = function (conceptId, propertyId) {
-    return $.post('/MorphemeApi/GetPropertyValues/', {
-        subjectId: conceptId,
-        propertyId: propertyId
-    })
+ConceptManager.PropertyAndValues = [];
+ConceptManager.prototype.getPropertyValues = function (conceptId, propertyId, options) {
+    var defaults = {
+        appId: '',
+        flush: false
+    };
+    var opts = $.extend(options, defaults);
+
+    var dtd = $.Deferred();
+
+    if (opts.flush) ConceptManager.PropertyAndValues[conceptId + propertyId] = undefined;
+
+    if (ConceptManager.PropertyAndValues[conceptId + propertyId] !== undefined)
+        dtd.resolve(ConceptManager.PropertyAndValues[conceptId + propertyId]);
+    else {
+        $.post('/MorphemeApi/GetPropertyValues/', {
+            subjectId: conceptId,
+            propertyId: propertyId,
+            appId: opts.appId
+        }).done(function (fss) {
+            ConceptManager.PropertyAndValues[conceptId + propertyId] = fss;
+            dtd.resolve(fss);
+        });
+    }
+    return dtd.promise();
+    
 }
 
 ConceptManager.prototype.search = function (fn, typeId) {
