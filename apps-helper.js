@@ -1279,10 +1279,10 @@ ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
     };
     var opts = $.extend(defaults, options);
 
-    return function (placeHolder, propertyId, values, subjectId) {
+    var rpv2 = function (placeHolder, propertyId, values, subjectId) {
+        placeHolder.empty();
         if (values.length == 0) { placeHolder.text('无属性值'); return; }
-        var ul = newTag('ul').addClass('nav nav-pills');
-        placeHolder.append(ul);
+        var ul = newTag('ul').addClass('nav nav-pills').appendTo(placeHolder);
         $.each(values, function (i, v) {
             /* 待显示的Concept，
             * 可能在Subject的位置上，也可能在Object的位置上。
@@ -1302,13 +1302,20 @@ ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
             }
             var menu;
             var mis = new Array();
-            
+
             $.when(
                 Nagu.MM.check().done(function (status) {
                     if (status.nagu) {
                         // 为每一个属性值生产一个下拉菜单:
                         var miSaid = MenuItem.getSaidMI(v, {
-                            changed: opts.changed
+                            //changed: opts.changed
+                            changed: function () {
+                                Nagu.CM.getPropertyValues(subjectId, propertyId, {
+                                    flush: true
+                                }).done(function (fss) {
+                                    rpv2(placeHolder, propertyId, fss, subjectId);
+                                });
+                            }
                         });
                         mis.push(miSaid);
                     }
@@ -1336,7 +1343,8 @@ ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
                 menu.appendTo(ul);
             });
         });
-    }
+    };
+    return rpv2;
 };
 
 // 一个通用的renderType方法,使用手风琴方式展示各类型的数据
