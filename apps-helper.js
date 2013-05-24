@@ -740,6 +740,7 @@ AddPropertyValueDialog.prototype.init = function () {
 
 AddPropertyValueDialog.prototype.toggle = function (subjectId, stype, predicateId, options) {
     this.opts = $.extend(this.opts, options);
+    AddPropertyValueDialog.added = this.opts.added;
 
     var div = $('#' + this.opts.dialogId);
     div.attr('subjectId', subjectId).attr('stype', stype);
@@ -1182,25 +1183,27 @@ ConceptDetailPanel.getFunction_renderRichProperty = function (addValueDialog) {
 ConceptDetailPanel.get_renderProperty3 = function (options) {
     var defaults = {
         dlgAddPropertyValue: new AddPropertyValueDialog(),
-        said: function () { }
+        valueAdded: function (fs) { }
     };
     var opts = $.extend(defaults, options);
+    log('get_renderProperty3');
 
-    return function (placeHolder, propertyId, subjectId) {
-
+    return function (placeHolder, propertyId, subjectId, options2) {
+        var opts2 = $.extend(options, options2);
         // 显示属性:
         Nagu.CM.get(propertyId).done(function (p) {
             var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + propertyId);
             var miAddValue = new MenuItem({
                 text: '添加属性值',
                 click: function () {
-                    opts.dlgAddPropertyValue.toggle(subjectId, Nagu.MType.Concept, p.ConceptId,
+                    opts2.dlgAddPropertyValue.toggle(subjectId, Nagu.MType.Concept, p.ConceptId,
                     {
-                        h3: '为属性“' + p.FriendlyNames[0] + '”添加属性值'
+                        h3: '为属性“' + p.FriendlyNames[0] + '”添加属性值',
+                        added: opts2.valueAdded
                     });
                 }
             });
-            // 为每一个属性值生产一个下拉菜单:
+            // 为每一个属性生产一个下拉菜单:
             placeHolder.conceptMenu([miAddValue, miGo], {
                 text: p.FriendlyNames[0]
             });
@@ -1422,12 +1425,23 @@ ConceptDetailPanel.renderType3 = function (conceptId, placeHolder, typeFs, opts)
                 var dl = newTag("dl").addClass('dl-horizontal').appendTo(ph);
                 propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
                     $.each(pvs, function (i, pv) {
+                        // 构建容器。dt: 属性, dd: 属性值
                         var dt = newDt().appendTo(dl);
+                        var dd = newDd().attr('pvsFor',pv.Key).appendTo(dl);
 
                         // 显示属性:
-                        opts.renderProperty(dt, pv.Key, conceptId);
-                        // 显示Value
-                        var dd = newDd().appendTo(dl);
+                        opts.renderProperty(dt, pv.Key, conceptId, {
+                            valueAdded: function (fs) {
+                                var propertyId = fs.Predicate.ConceptId;
+                                Nagu.CM.getPropertyValues(conceptId, propertyId, {
+                                    flush: true
+                                }).done(function (fss) {
+                                    var pvdd = $('dd[pvsFor="' + pv.Key + '"]');
+                                    opts.renderPropertyValues(pvdd, propertyId, fss, conceptId);
+                                });
+                            }
+                        });
+                        
                         opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId);
                     });
                 });
@@ -1554,8 +1568,7 @@ $.fn.conceptInfoFromTypes = function (conceptId, options) {
 
     var typeDiv = newDiv().appendTo(div);
     // 1. 获取全部类型:
-    var sm = new StatementManager();
-    sm.findBySP(conceptId, Nagu.MType.Concept, Nagu.Concepts.RdfType, { appId: opts.appId }).done(function (fss) {
+    Nagu.SM.findBySP(conceptId, Nagu.MType.Concept, Nagu.Concepts.RdfType, { appId: opts.appId }).done(function (fss) {
         // 2. 循环显示每一个类型:
         $.each(fss, function (i, fs) {
             opts.subjectId = conceptId;
