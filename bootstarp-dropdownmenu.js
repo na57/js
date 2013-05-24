@@ -191,8 +191,8 @@ Menu.prototype.appendTo = function (placeHolder) {
         item.appendTo(ulItems);
     });
 
-    menuLi.append(togglerA).append(ulItems);
-    placeHolder.append(menuLi);
+    menuLi.append(togglerA).append(ulItems).appendTo(placeHolder);
+    togglerA.dropdown();
     this.opts.appended(menuLi, togglerA, ulItems);
 }
 
