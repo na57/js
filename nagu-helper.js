@@ -389,7 +389,7 @@ ConceptManager.prototype.getPropertyValues = function (conceptId, propertyId, op
         appId: '',
         flush: false
     };
-    var opts = $.extend(options, defaults);
+    var opts = $.extend(defaults, options);
 
     var dtd = $.Deferred();
 
