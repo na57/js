@@ -889,7 +889,7 @@ function ArticleShowDialog(options) {
         appId: "",
         templateUrl: "/Apps/private/dialog/articleShow.html",
         dialogId: "dlgArticleShow" + randomInt(),
-        autoInit: true,
+        autoInit: true
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
@@ -1190,6 +1190,8 @@ ConceptDetailPanel.get_renderProperty3 = function (options) {
 
     return function (placeHolder, propertyId, subjectId, options2) {
         var opts2 = $.extend(options, options2);
+        //var ul = $('<ul/>').addClass('nav nav-pills').appendTo(placeHolder);
+        //var li = $('<li/>').addClass('dropdown').appendTo(ul);
         // 显示属性:
         Nagu.CM.get(propertyId).done(function (p) {
             var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + propertyId);
@@ -1285,7 +1287,7 @@ ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
     var rpv2 = function (placeHolder, propertyId, values, subjectId) {
         placeHolder.empty();
         if (values.length == 0) { placeHolder.text('无属性值'); return; }
-        var ul = newTag('ul').addClass('nav nav-pills').appendTo(placeHolder);
+        var ul = newTag('ul').addClass('nav nav-pills pv-nav-pills').appendTo(placeHolder);
         $.each(values, function (i, v) {
             /* 待显示的Concept，
             * 可能在Subject的位置上，也可能在Object的位置上。
@@ -1454,6 +1456,49 @@ ConceptDetailPanel.renderType3 = function (conceptId, placeHolder, typeFs, opts)
     });
 };
 
+// 一个renderType方法，直接以dt/dd的形式展示属性和值，自适应登录情况。
+ConceptDetailPanel.renderType4 = function (conceptId, placeHolder, typeFs, opts) {
+    /*
+    放弃前几个参数，数据全部从opts中取
+    */
+
+    // 保证Object是Concept，不是则跳出：
+    if (opts.typeFs.Object.ConceptId === undefined) return;
+
+    Nagu.CM.get(typeFs.Object.ConceptId).done(function (type) {
+        // 4. 循环显示类型的每个属性
+        var dl = newTag("dl").addClass('dl-horizontal').appendTo(placeHolder);
+        propertyValuesFormBaseClass(opts.subjectId, Nagu.MType.Concept, opts.typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
+            $.each(pvs, function (i, pv) {
+                // 构建容器。dt: 属性, dd: 属性值
+                var dt = newDt().appendTo(dl);
+                var dd = newDd().attr('pvsFor', pv.Key).appendTo(dl);
+
+                // 显示属性:
+                opts.renderProperty(dt, pv.Key, conceptId, {
+                    valueAdded: function (fs) {
+                        var propertyId = fs.Predicate.ConceptId;
+                        Nagu.CM.getPropertyValues(conceptId, propertyId, {
+                            flush: true
+                        }).done(function (fss) {
+                            var pvdd = $('dd[pvsFor="' + pv.Key + '"]');
+                            opts.renderPropertyValues(pvdd, propertyId, fss, conceptId);
+                        });
+                    }
+                });
+                
+                // 显示属性值
+                opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId);
+
+                
+            });
+            placeHolder.append(newBtn().text('详细信息').click(function () {
+                window.location = '/apps/public/concept.html?id=' + type.ConceptId;
+            }));
+        });
+    });
+};
+
 // 默认显示属性值的方法
 ConceptDetailPanel.renderPropertyValues = function (placeHolder, propertyId, values, subjectId) {
     if (values.length == 0) { placeHolder.text('无属性值'); return; }
@@ -1588,7 +1633,6 @@ $.fn.conceptProperties = function (conceptId, options) {
         appId: "",
         renderPropertyAndValues: ConceptDetailPanel.renderPropertyAndValues,
         renderProperty: ConceptDetailPanel.renderProperty,
-        //renderPropertyValues: ConceptDetailPanel.renderPropertyValues
         renderPropertyValues: ConceptDetailPanel.get_renderPropertyValues2()
     };
     // Extend our default options with those provided.    
@@ -1625,6 +1669,39 @@ $.fn.conceptProperties = function (conceptId, options) {
     return div;
 };
 
+$.fn.conceptType = function (typeFs, options) {
+    var defaults = {
+        clearBefore: true,
+        appId: "",
+        renderPropertyAndValues: ConceptDetailPanel.renderPropertyAndValues,
+        renderProperty: ConceptDetailPanel.renderProperty,
+        renderType: ConceptDetailPanel.renderType4,
+        renderPropertyValues: ConceptDetailPanel.get_renderPropertyValues2()
+    };
+    // Extend our default options with those provided.    
+    var opts = $.extend(defaults, options);
+
+    var div = $(this);
+
+    if (opts.clearBefore) $(this).empty();
+
+    Nagu.CM.get(typeFs.Object.ConceptId).done(function (type) {
+        div.prepend(newTag('h3', { text: type.FriendlyNames[0] }));
+    });
+    
+    var typeDiv = newDiv().appendTo(div);
+    var loading = loadingImg128();
+    typeDiv.append(loading);
+
+    // 显示类型的信息
+    opts.subjectId = typeFs.Subject.ConceptId;
+    opts.typeDiv = typeDiv;
+    opts.typeFs = typeFs;
+    opts.renderType(opts.subjectId, typeDiv, typeFs, opts);
+    loading.remove();
+
+    return div;
+};
 
 
 
