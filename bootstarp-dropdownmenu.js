@@ -39,7 +39,7 @@ MenuItem.getSaidMI = function (statement, options) {
         click: function () {
             var a = $(this);
             var sm = new SayManager();
-            if (a.text() == '添加星标') {
+            if (a.attr('nagu-said-status') == 'false') {
                 sm.say(a.attr('statementId')).done(function () {
                     a.text('删除星标');
                     a.attr('nagu-said-status', !a.attr('nagu-said-status'));
@@ -63,9 +63,9 @@ MenuItem.getSaidMI = function (statement, options) {
             var saym = new SayManager();
             saym.status(statement.StatementId).done(function (data) {
                 if (data.HasSaid) {
-                    a.text('删除星标');
+                    a.text('删除星标').prepend($('<i></i>').addClass('icon-star-empty'));
                 } else {
-                    a.text('添加星标');
+                    a.text('添加星标').prepend($('<i></i>').addClass('icon-star'));
                 }
                 a.attr('nagu-said-status', data.HasSaid)
             }).fail(function () { alert('get status failed') });
