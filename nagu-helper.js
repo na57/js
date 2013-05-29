@@ -411,10 +411,16 @@ ConceptManager.prototype.getPropertyValues = function (conceptId, propertyId, op
     
 }
 
-ConceptManager.prototype.search = function (fn, typeId) {
+ConceptManager.prototype.search = function (fn, options) {
+    var defaults = {
+        typeId: '',
+        exact: true
+    };
+    var opts = $.extend(defaults, options);
     return $.post('/ConceptApi/Search/', {
         term: fn,
-        typeId: typeId
+        typeId: opts.typeId,
+        exact: opts.exact
     })
 }
 

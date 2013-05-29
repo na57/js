@@ -167,6 +167,7 @@ function Menu(menuItems, options) {
         text: "菜单名称",
         showCaret: false,
         appended: function (li, a, ul) { },
+        rendered: function (li, a, ul) { },
         renderContainer: function (id) {
             return newTag('li', { id: id }).addClass('dropdown');
         },
@@ -176,7 +177,7 @@ function Menu(menuItems, options) {
     this.opts = $.extend(defaults, options);
 };
 
-Menu.prototype.appendTo = function (placeHolder) {
+Menu.prototype.render = function () {
     var menuId = 'menu' + randomInt();
     var menuLi = this.opts.renderContainer(menuId);
 
@@ -191,9 +192,15 @@ Menu.prototype.appendTo = function (placeHolder) {
         item.appendTo(ulItems);
     });
 
-    menuLi.append(togglerA).append(ulItems).appendTo(placeHolder);
+    menuLi.append(togglerA).append(ulItems);
     togglerA.dropdown();
-    this.opts.appended(menuLi, togglerA, ulItems);
+    this.opts.rendered(menuLi, togglerA, ulItems);
+    return menuLi;
+};
+
+Menu.prototype.appendTo = function (placeHolder) {
+    var li = this.render().appendTo(placeHolder);
+    this.opts.appended(li, li.children('a'), li.children('ul'));
 }
 
 Menu.prototype.insert = function (menuItem) {
