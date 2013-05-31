@@ -52,7 +52,8 @@ Nagu.Image = {
 };
 
 Nagu.User = {
-    Favorite: '985902bb-34a5-454a-b4be-8771d511635b'
+    Favorite: '985902bb-34a5-454a-b4be-8771d511635b',
+    FavoriteGroup: '56b10810-7ffd-4e39-925b-bf270544624c'
 };
 
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
@@ -527,7 +528,7 @@ StatementManager.prototype.create = function (subjectId, stype, predicateId, obj
 };
 StatementManager.prototype.findBySP = function (subject, stype, predicate, options) {
     var defaults = {
-        appId: "00000000-0000-0000-0000-000000000000"
+        appId: ''
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
@@ -647,20 +648,6 @@ StatementManager.prototype.get = function (id) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function pagedByPO(predicateId, objectId, otype, start, count) {
     return $.getJSON("/StatementApi/PagedByPO/" + predicateId,
     {
@@ -678,10 +665,6 @@ function searchWithType(fn, type) {
     });
 }
 
-
-
-
-
 function findSByPO(predicateId, objectId, oType) {
     return $.getJSON("/MorphemeApi/FindSByPO/" + predicateId,
     {
@@ -689,9 +672,6 @@ function findSByPO(predicateId, objectId, oType) {
         otype: oType
     });
 }
-
-
-
 
 function propertyValuesFormBaseClass(subject, sType, rdfType, appId) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
@@ -817,11 +797,44 @@ MemberManager.prototype.logout = function () {
     })
 };
 
+// 获取当前用户的收藏分组
+MemberManager.prototype.favoriteGroup = function () {
+    var dtd = $.Deferred();
+    this.getMe().done(function (me) {
+        if (me.ret != 0) dtd.reject();
+        else
+            Nagu.SM.findBySP(me.Id, Nagu.MType.Concept, Nagu.User.FavoriteGroup, {
+                appId: me.Id
+            }).done(function (fss) {
+                dtd.resolve(fss);
+            });
+    });
+    return dtd.promise();
+};
 
-
-
-
-
+// 获取指定分组中的收藏的Concept，若未指定分组，则获取未被分组的。
+MemberManager.prototype.favoriteConcepts = function (groupId) {
+    var dtd = $.Deferred();
+    this.getMe().done(function (me) {
+        if (me.ret != 0) dtd.reject();
+        else {
+            if (groupId === undefined || groupId == '')
+                // 如果未指定分组，则从未分组收藏中获取
+                Nagu.SM.findBySP(me.Id, Nagu.MType.Concept, Nagu.User.Favorite, {
+                    appId: me.Id
+                }).done(function (fss) {
+                    dtd.resolve(fss);
+                });
+            // 否则，则从分组中获取
+            else Nagu.SM.findBySP(groupId, Nagu.MType.Concept, Nagu.Rdf.Li, {
+                appId: me.Id
+            }).done(function (fss) {
+                dtd.resolve(fss);
+            });
+        }
+    });
+    return dtd.promise();
+};
 
 /*** WeiboManager 类*****************************************************************************************************************************/
 function WeiboManager(options) {

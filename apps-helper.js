@@ -332,14 +332,6 @@ $.fn.appendStatement = function(statementId){
 };
 
 
-
-
-
-
-
-
-
-
 $.fn.showStatement = function (statement) {
     var ph = $(this);
     var sm = new StatementManager();
@@ -595,7 +587,9 @@ AddTypeDialog.prototype.init = function () {
     var collapseConcept = this.opts.collapseConceptId;
     var collapseSystem = this.opts.collapseSystemId;
     var listAppsId = this.opts.listAppsId;
+    var dialogId = this.opts.dialogId;
     Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
+        $('body #' + dialogId).remove();
         html = html.replace(/{collapseConcept}/g, collapseConcept);
         html = html.replace(/{collapseSystem}/g, collapseSystem);
         html = html.replace(/{listApps}/g, listAppsId);
@@ -830,20 +824,13 @@ AddPropertyValueDialog.AddImageValue = function (options) {
 
 
 
-
-
-
-
-
-
-
 /******* ArticleShowDialog 类 ***********************************************************************************************************************************/
 function ArticleShowDialog(options) {
     var defaults = {
         host: "",
         appId: "",
         templateUrl: "/Apps/private/dialog/articleShow.html",
-        dialogId: "dlgArticleShow" + randomInt(),
+        dialogId: "dlgArticleShow",
         autoInit: true
     };
     // Extend our default options with those provided.    
@@ -856,6 +843,7 @@ ArticleShowDialog.prototype.init = function () {
     // 以下变量声明不能删除,否则异步函数无法取值.
     var dialogId = this.opts.dialogId;
     return Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
+        $('body #' + dialogId).remove();
         html = html.replace(/{dlgArticleShow}/g, dialogId);
 
         $('body').append(html);
@@ -888,7 +876,7 @@ function ImageShowDialog(options) {
         host: "",
         appId: "",
         templateUrl: "/Apps/private/dialog/imageShow.html",
-        dialogId: "dlgImageShow" + randomInt(),
+        dialogId: "dlgImageShow",
         autoInit: true,
     };
     // Extend our default options with those provided.    
@@ -901,6 +889,8 @@ ImageShowDialog.prototype.init = function () {
     // 以下变量声明不能删除,否则异步函数无法取值.
     var dialogId = this.opts.dialogId;
     return Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
+
+        $('body #' + dialogId).remove();
         html = html.replace(/{dlgImageShow}/g, dialogId);
 
         $('body').append(html);
@@ -936,7 +926,7 @@ function BagShowDialog(options) {
         host: "",
         appId: "",
         templateUrl: "/Apps/private/dialog/bagShow.html",
-        dialogId: "dlgBagShow" + randomInt(),
+        dialogId: "dlgBagShow",
         autoInit: true,
     };
     // Extend our default options with those provided.    
@@ -949,6 +939,7 @@ BagShowDialog.prototype.init = function () {
     // 以下变量声明不能删除,否则异步函数无法取值.
     var dialogId = this.opts.dialogId;
     return Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
+        $('body #' + dialogId).remove();
         html = html.replace(/{dlgBagShow}/g, dialogId);
         $('body').append(html);
     });
@@ -974,13 +965,13 @@ BagShowDialog.prototype.toggle = function (conceptId, options) {
     div.modal('toggle');
 };
 
-/******* BagShowDialog 类 ***********************************************************************************************************************************/
+/******* LoginDialog 类 ***********************************************************************************************************************************/
 function LoginDialog(options) {
     var defaults = {
         host: "",
         appId: "",
         templateUrl: "/Apps/private/dialog/login.html",
-        dialogId: "dlgLogin" + randomInt(),
+        dialogId: "dlgLogin",
         autoInit: true,
         success: function (me) { },
         fail: function () { }
@@ -998,6 +989,7 @@ LoginDialog.prototype.init = function () {
     // 以下变量声明不能删除,否则异步函数无法取值.
     var dialogId = this.opts.dialogId;
     return Nagu.DialogM.get(this.opts.templateUrl).done(function (html) {
+        $('body #' + dialogId).remove();
         html = html.replace(/{dlgLogin}/g, dialogId);
         $('body').append(html);
     });
@@ -1805,6 +1797,36 @@ Dialog.InitAppList = function (listApps) {
     return dtd.promise(); 
 };
 
+// 初始化对话框中的收藏分组Select
+Dialog.InitFavoriteGroupSelect = function (selectGroup, selectConcept) {
+    Nagu.MM.favoriteGroup().done(function (fss) {
+        // 清空数据
+        selectGroup.empty().change(function () {
+            Nagu.MM.favoriteConcepts($(this).val()).done(function (fss2) {
+                selectConcept.empty();
+                $.each(fss2, function (i, fs2) {
+                    var option2 = $('<option/>').val(fs2.Object.ConceptId).text('laoding...').appendTo(selectConcept);
+                    Nagu.CM.get(fs2.Object.ConceptId).done(function (c2) {
+                        option2.text(c2.FriendlyNames[0]);
+                    });
+                });
+            });
+        });
+
+        // 加入并显示“未分组”选项
+        var unGroup = $('<option/>').val('').text('未分组').appendTo(selectGroup);
+
+        // 逐个添加收藏分组
+        $.each(fss, function (i, fs) {
+            var option = $('<option/>').val(fs.Object.ConceptId).text('laoding...');
+            option.appendTo(selectGroup);
+            Nagu.CM.get(fs.Object.ConceptId).done(function (c) {
+                option.text(c.FriendlyNames[0]);
+            });
+        });
+        selectGroup.change();
+    });
+};
 
 /******* CreateConceptDialog 类 ******************************************************************************************************************/
 function CreateConceptDialog(options) {
@@ -2074,6 +2096,7 @@ $.fn.btnFavorite = function (conceptId, options) {
     var defaults = {
         sayText: '添加收藏',
         dontSayText: '删除收藏',
+        complete: function(btn){},
         click: function () {
             var a = $(this);
             
