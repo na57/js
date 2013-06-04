@@ -776,11 +776,19 @@ MemberManager.prototype.manageableApps = function (userId) {
 }
 
 // 添加对指定Concept的收藏
-MemberManager.prototype.favorite = function (conceptId) {
+MemberManager.prototype.favorite = function (conceptId, groupId) {
     var dtd = $.Deferred();
 
     this.getMe().done(function (me) {
-        Nagu.SM.create(me.Id, Nagu.MType.Concept, Nagu.User.Favorite, conceptId, Nagu.MType.Concept, me.Id).done(function (fs) {
+        var sub, pred;
+        if (groupId === undefined) {
+            sub = me.Id;
+            pred = Nagu.User.Favorite;
+        } else {
+            sub = groupId;
+            pred = Nagu.Rdf.Li;
+        }
+        Nagu.SM.create(sub, Nagu.MType.Concept, pred, conceptId, Nagu.MType.Concept, me.Id).done(function (fs) {
             dtd.resolve(fs);
         });
     });
@@ -832,6 +840,55 @@ MemberManager.prototype.favoriteConcepts = function (groupId) {
     });
     return dtd.promise();
 };
+
+// 检查指定的概念是否被收藏的指定的组中,groupId为undefined时表示未分组
+MemberManager.prototype.isFavorite = function (conceptId, groupId) {
+    var dtd = $.Deferred();
+    
+    this.getMe().done(function (me) {
+        var sub, pred;
+        if (groupId === undefined) {
+            sub = me.Id;
+            pred = Nagu.User.Favorite;
+        } else {
+            sub = groupId;
+            pred = Nagu.Rdf.Li;
+        }
+        Nagu.SM.findBySPO(sub, pred, conceptId, {
+            appId: me.Id
+        }).done(function (fss) {
+            if (fss.length > 0) dtd.resolve(true);
+            else dtd.resolve(false);
+        });
+    });
+    return dtd.promise();
+};
+
+// 取消对概念的收藏
+MemberManager.prototype.removeFavorite = function (conceptId, groupId) {
+    var dtd = $.Deferred();
+
+    this.getMe().done(function (me) {
+        var sub, pred;
+        if (groupId === undefined) {
+            sub = me.Id;
+            pred = Nagu.User.Favorite;
+        } else {
+            sub = groupId;
+            pred = Nagu.Rdf.Li;
+        }
+        Nagu.SM.findBySPO(sub, pred, conceptId, {
+            appId: me.Id
+        }).done(function (fss) {
+            if (fss.length > 0) Nagu.SayM.dontSay(fss[0].StatementId).done(function () {
+                dtd.resolve();
+            });
+            
+        });
+    });
+    return dtd.promise();
+};
+
 
 /*** WeiboManager 类*****************************************************************************************************************************/
 function WeiboManager(options) {
