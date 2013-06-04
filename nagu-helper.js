@@ -889,6 +889,25 @@ MemberManager.prototype.removeFavorite = function (conceptId, groupId) {
     return dtd.promise();
 };
 
+// 创建一个收藏分组
+MemberManager.prototype.createFavoriteGroup = function (name) {
+    var dtd = $.Deferred();
+
+    name = $.trim(name);
+    if (name) {
+        this.getMe().done(function (me) {
+            Nagu.CM.create(name, '收藏分组：' + name).done(function (group) {
+                Nagu.SM.create(me.Id, Nagu.MType.Concept,
+                    Nagu.User.FavoriteGroup, group.ConceptId,
+                    Nagu.MType.Concept, me.Id).done(function (fs) {
+                        dtd.resolve(group, fs);
+                });
+            });
+        });
+    }
+    return dtd.promise();
+};
+
 
 /*** WeiboManager 类*****************************************************************************************************************************/
 function WeiboManager(options) {
