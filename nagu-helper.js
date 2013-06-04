@@ -41,6 +41,10 @@ Nagu.Rdf = {
     Li: '028428d9-3470-47bb-abe1-5712bc047589',
     Type: "4c5b16cd-d526-48cb-948e-250ce21facc8"
 };
+Nagu.Rdfs = {
+    Label: '5916eece-54b1-418f-bb52-8bbaf957da88',
+    Comment: '57aa505c-f1d4-480d-907b-cb80c0ff7f75'
+};
 
 Nagu.App = {
     Manager: '18567b72-f23a-4845-b40a-fc1886a7277f',
@@ -205,29 +209,22 @@ ConceptManager.send = function (message, iframeId) {
 
     return dtd.promise();
 };
-ConceptManager.prototype.get = function (id) {
+ConceptManager.prototype.get = function (id, options) {
+    var defaults = {
+        flush: false
+    };
+    options = $.extend(defaults, options);
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var result = ConceptManager.getCachedConcept(id);
+    if (options.flush) result = undefined;
+
     if (result === undefined || result == null) {
-        if (this.opts.useIframe) {
-            ConceptManager.send({
-                url: "http://nagu.cc/ConceptApi/Get/" + id
-            }, this.opts.iframeId).done(function (message) {
-                if (message.done) {
-                    ConceptManager.setCachedConcept(message.result);
-                    dtd.resolve(message.result);
-                } else {
-                    dtd.reject();
-                }
-            });
-        } else {
-            $.getJSON(this.host + "/ConceptApi/Get/" + id).done(function (concept) {
-                ConceptManager.setCachedConcept(concept);
-                dtd.resolve(concept);
-            }).fail(function () {
-                dtd.reject();
-            });
-        }
+        $.getJSON(this.host + "/ConceptApi/Get/" + id).done(function (concept) {
+            ConceptManager.setCachedConcept(concept);
+            dtd.resolve(concept);
+        }).fail(function () {
+            dtd.reject();
+        });
     }
     else {
         dtd.resolve(ConceptManager.getCachedConcept(id));

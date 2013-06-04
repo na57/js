@@ -1074,18 +1074,36 @@ ConceptDetailPanel.getFunction_RenderRichTitle = function (createConceptDialog) 
 };
 
 // 返回一个通用的,显示"富功能"的renderValues回调函数
-ConceptDetailPanel.getFunction_renderRichValues = function (changed) {
-    return function (ph, values, valueFss) {
-        var dd = newDd();
-        var ul = newTag('ul').addClass('nav nav-pills');
-        ph.append(dd.append(ul));
-
+ConceptDetailPanel.get_renderValues = function (options) {
+    var defaults = {
+        changed: function () { }
+    };
+    options = $.extend(defaults, options);
+    var rrt = function (ph, values, valueFss) {
+        var subjectId = valueFss[0].Subject.ConceptId;
+        var predicateId = valueFss[0].Predicate.ConceptId;
+        
+        ph.attr('pvsFor', predicateId);
+        var ul = newTag('ul').addClass('nav nav-pills').appendTo(ph);
 
 
         // 为每一个名称或描述值生成下拉菜单:
         for (var i = 0; i < values.length; i++) {
             var miSaid = MenuItem.getSaidMI(valueFss[i], {
-                changed: changed
+                changed: function () {
+                    // TODO:为何flush不起作用？
+                    Nagu.CM.get(subjectId, {
+                        flush: true
+                    }).done(function (c) {
+                        ph.empty();
+
+                        if (predicateId == Nagu.Rdfs.Label) {
+                            rrt(ph, c.FriendlyNames, c.FriendlyNameFss);
+                        } else {
+                            rrt(ph, c.Descriptions, c.DescriptionFss);
+                        }
+                    });
+                }
             });
 
             var menu = new Menu([miSaid], {
@@ -1095,6 +1113,7 @@ ConceptDetailPanel.getFunction_renderRichValues = function (changed) {
         }
         $('.dropdown-toggle').dropdown();
     }
+    return rrt;
 };
 
 ConceptDetailPanel.renderProperty = function (placeHolder, propertyId, subjectId) {
@@ -1336,13 +1355,16 @@ ConceptDetailPanel.get_renderPropertyValues2 = function (options) {
                                 a.text(c.FriendlyNames[0]);
                             });
 
-                            // 根据said状态显示图标
+                            // 根据appId和said状态显示图标
                             if (fs.AppId != Nagu.PublicApp) a.prepend(Icon('icon-lock'));
                             else Nagu.SayM.status(fs.StatementId).done(function (status) {
                                 if (!status.HasSaid && status.ret == 0) {
                                     a.prepend(Icon('icon-question-sign'));
                                 }
                             });
+
+                            
+                            
                         }
                     });
                     menu.render();
@@ -1467,6 +1489,34 @@ ConceptDetailPanel.renderType4 = function (conceptId, placeHolder, typeFs, opts)
     // 保证Object是Concept，不是则跳出：
     if (opts.typeFs.Object.ConceptId === undefined) return;
 
+    // 显示此类型相关的操作：
+    var nav = $('<ul/>').addClass('nav nav-pills').appendTo(placeHolder);
+    // 显示标题：
+    var spanHeader = $('<span/>').text('关于此类型的操作：');
+    var liHeader = $('<li/>').append(spanHeader).appendTo(nav);
+
+    // 显示“详细信息”链接
+    var aTypeDetail = $('<a/>').attr('href', 'concept.html?id='+opts.typeFs.Object.ConceptId).text('详细信息');
+    var liTypeDetail = $('<li/>').append(aTypeDetail).appendTo(nav);
+
+    // 显示“删除/添加星标”按钮
+    var aSaid = newA().btnSay(opts.typeFs.StatementId, {
+        changed: function (ph, data, options) {
+            if (data.HasSaid) {
+                ph.text(options.dontSayText).prepend(Icon('icon-star-empty'));
+            } else {
+                if (data.SaidCount == 0) {
+                    ph.closest('li').remove();
+                    Nagu.CM.flush(opts.typeFs.Subject.ConceptId);
+                    spanHeader.text('此分类已删除，下次刷新将不再显示');
+                } else
+                    ph.text(options.sayText).prepend(Icon('icon-empty'));
+            }
+        }
+    });
+    var liSaid = newLi().append(aSaid).appendTo(nav);
+
+
     Nagu.CM.get(typeFs.Object.ConceptId).done(function (type) {
         // 4. 循环显示类型的每个属性
         var dl = newTag("dl").addClass('dl-horizontal').appendTo(placeHolder);
@@ -1494,9 +1544,6 @@ ConceptDetailPanel.renderType4 = function (conceptId, placeHolder, typeFs, opts)
 
                 
             });
-            placeHolder.append(newBtn().text('详细信息').click(function () {
-                window.location = '/apps/public/concept.html?id=' + type.ConceptId;
-            }));
         });
     });
 };
@@ -1518,7 +1565,7 @@ ConceptDetailPanel.renderPropertyAndValues = function (placeHolder, propertyId, 
     // 显示属性:
     opts.renderProperty(dt, propertyId, subjectId);
     // 显示Value
-    var dd = newDd().appendTo(placeHolder);
+    var dd = newDd().attr('pvsFor', pv.Key).appendTo(placeHolder);
     opts.renderPropertyValues(dd, propertyId, values, subjectId);
 };
 
@@ -1555,8 +1602,9 @@ $.fn.conceptShow = function (conceptId, options) {
             placeHolder.text(title);
         },
         renderValues: function (placeHolder, values, valueFss) {
+            var ul = $('<ul/>').addClass('nav nav-pills').appendTo(placeHolder);
             for (var i = 0; i < values.length; i++) { //此处无法使用$.each,why?
-                placeHolder.append(newDd().text(values[i]));
+                newLi().text(values[i]).appendTo(ul);
             }
         }
     };
@@ -1565,30 +1613,28 @@ $.fn.conceptShow = function (conceptId, options) {
     var div = $(this);
 
     if (opts.clearBefore) div.empty();
-    div.append(loadingImg128());
+    var loading = loadingImg128().appendTo(div);
 
     var dl = newTag("dl").addClass("dl-horizontal");
-    div.append(newTag("h3", { text: '基本信息 · · · · · ·' })).append(dl);
-    var cm = new ConceptManager();
+    div.append(newTag("h3", { text: '名称和简介 · · · · · ·' })).append(dl);
 
-    return cm.get(conceptId).done(function (concept) {
+    return Nagu.CM.get(conceptId).done(function (concept) {
         // 显示所有FriendlyName:
         if (concept.FriendlyNames.length > 0) {
-            var dt = newDt();
-            dl.append(dt);
+            var dt = newDt().appendTo(dl);
             opts.renderTitle(dt, '名称', concept);
-            opts.renderValues(dl, concept.FriendlyNames, concept.FriendlyNameFss);
+
+            var dd = newDd().appendTo(dl);
+            opts.renderValues(dd, concept.FriendlyNames, concept.FriendlyNameFss);
         }
 
         // 显示所有Description:
         if (concept.Descriptions.length > 0) {
-            var dt = newDt();
-            dl.append(dt);
+            var dt = newDt().appendTo(dl);
             opts.renderTitle(dt, '简介', concept);
             opts.renderValues(dl, concept.Descriptions, concept.DescriptionFss);
         }
-        div.find('.nagu-loading-img-128').remove();
-
+        loading.remove();
     });
 };
 
@@ -1633,7 +1679,7 @@ $.fn.conceptProperties = function (conceptId, options) {
     var defaults = {
         clearBefore: true,
         appId: "",
-        renderPropertyAndValues: ConceptDetailPanel.renderPropertyAndValues,
+        //renderPropertyAndValues: ConceptDetailPanel.renderPropertyAndValues,
         renderProperty: ConceptDetailPanel.renderProperty5,
         renderPropertyValues: ConceptDetailPanel.get_renderPropertyValues2()
     };
@@ -1643,7 +1689,7 @@ $.fn.conceptProperties = function (conceptId, options) {
 
     var div = $(this);
 
-    div.append(newTag('h3', { text: '其他属性 · · · · · ·' }));
+    div.append(newTag('h3', { text: '属性及值 · · · · · ·' }));
     var loading = loadingImg128();
     div.append(loading);
 
@@ -1659,10 +1705,20 @@ $.fn.conceptProperties = function (conceptId, options) {
             var dt = newDt("dt_" + pv.Key).appendTo(dl);
 
             // 显示属性:
-            opts.renderProperty(dt, pv.Key, conceptId);
+            opts.renderProperty(dt, pv.Key, conceptId, {
+                valueAdded: function (fs) {
+                    var propertyId = fs.Predicate.ConceptId;
+                    Nagu.CM.getPropertyValues(conceptId, propertyId, {
+                        flush: true
+                    }).done(function (fss) {
+                        var pvdd = $('dd[pvsFor="' + pv.Key + '"]');
+                        opts.renderPropertyValues(pvdd, propertyId, fss, conceptId);
+                    });
+                }
+            });
 
             // 显示Value
-            var dd = newDd().appendTo(dl);
+            var dd = newDd().attr('pvsFor', pv.Key).appendTo(dl);
             opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId, opts);
         });
 
@@ -1949,16 +2005,6 @@ SelectConceptDialog.prototype.hide = function () {
 
 
 
-
-
-
-
-
-
-
-
-
-
 /******* SearchConceptDialog 类 ******************************************************************************************************************/
 function SearchConceptDialog(options) {
     var defaults = {
@@ -2009,13 +2055,6 @@ SearchConceptDialog.prototype.toggle = function (options) {
 SearchConceptDialog.prototype.hide = function () {
     $('#' + this.opts.dialogId).modal('hide');
 }
-
-
-
-
-
-
-
 
 
 /*******用于显示Concept的列表******************************************************************************************************************/

@@ -29,39 +29,38 @@ MenuItem.prototype.appendTo = function (placeHolder) {
 // 返回一个通用的,用于添加或删除星标的MenuItem对象
 MenuItem.getSaidMI = function (statement, options) {
     var defaults = {
+        text: '添加/删除星标',
         changed: function () { }
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
 
     return new MenuItem({
-        text: '添加/删除星标',
+        text: opts.text,
         click: function () {
             var a = $(this);
-            var sm = new SayManager();
             if (a.attr('nagu-said-status') == 'false') {
-                sm.say(a.attr('statementId')).done(function () {
+                Nagu.SayM.say(a.attr('statementId')).done(function (data) {
                     a.text('删除星标');
                     a.attr('nagu-said-status', !a.attr('nagu-said-status'));
-                    opts.changed();
+                    opts.changed(data);
                 }).fail(function () { alert('fail'); a.text('添加星标'); });
             } else {
-                sm.dontSay(a.attr('statementId')).done(function (data) {
+                Nagu.SayM.dontSay(a.attr('statementId')).done(function (data) {
                     if (data.SaidCount == 0) {
                         $('#' + a.attr('menuId')).remove();
                     } else {
                         a.text('添加星标');
                         a.attr('nagu-said-status', !a.attr('nagu-said-status'));
                     }
-                    opts.changed();
+                    opts.changed(data);
                 }).fail(function () { alert('fail'); a.text('删除星标'); });
             }
             
         },
         appended: function (li, a) {
             a.attr('statementId', statement.StatementId);
-            var saym = new SayManager();
-            saym.status(statement.StatementId).done(function (data) {
+            Nagu.SayM.status(statement.StatementId).done(function (data) {
                 if (data.HasSaid) {
                     a.text('删除星标').prepend($('<i></i>').addClass('icon-star-empty'));
                 } else {
@@ -252,40 +251,43 @@ $.fn.btnSay = function (statementId, options) {
         click: function () {
             var a = $(this);
             var statementId = a.attr('statementId');
-            var sm = new SayManager();
             if (a.attr('nagu-said-status') == 'true') {
-                sm.dontSay(statementId).done(function (data) {
+                Nagu.SayM.dontSay(statementId).done(function (data) {
                     a.btnSay(statementId, options);
 
-                    if (data.SaidCount == 0) a.remove();
-                    else opts.changed(data);
+                    if (data.SaidCount == 0) {
+                        //a.remove();
+                        opts.changed(ph, data, opts);
+                    }
                 }).fail(function () { alert('fail'); });
             } else {
-                sm.say(a.attr('statementId')).done(function (data) {
+                Nagu.SayM.say(a.attr('statementId')).done(function (data) {
                     a.btnSay(statementId, options);
-                    opts.changed(data);
                 }).fail(function () { alert('fail'); });
             }
         },
-        changed: function (data) { }
+        changed: function (ph, data, options) {
+            ph.addClass('btn')
+            if (data.HasSaid) {
+                ph.text(options.dontSayText).prepend(Icon('icon-star-empty'));
+                ph.addClass('btn-danger');
+            } else {
+                ph.text(options.sayText).prepend(Icon('icon-empty'));
+                ph.removeClass('btn-danger');
+            }
+        }
     };
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
 
     var ph = $(this);
-    ph.attr('statementId', statementId).addClass('btn');
+    ph.attr('statementId', statementId);
     ph.unbind('click').click(opts.click);
 
     var saym = new SayManager();
     saym.status(statementId).done(function (data) {
         ph.attr('nagu-said-status', data.HasSaid);
-        if (data.HasSaid) {
-            ph.text(opts.dontSayText).prepend(Icon('icon-star-empty'));
-            ph.addClass('btn-danger');
-        } else {
-            ph.text(opts.sayText).prepend(Icon('icon-empty'));
-            ph.removeClass('btn-danger');
-        }
+        opts.changed(ph, data, opts);
     });
     return ph;
 
