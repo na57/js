@@ -1143,10 +1143,9 @@ ConceptDetailPanel.getFunction_renderRichProperty = function (addValueDialog) {
 // #9 返回一个具有"下拉菜单"的renderProperty回调函数
 ConceptDetailPanel.get_renderProperty3 = function (options) {
     var defaults = {
-        dlgAddPropertyValue: new AddPropertyValueDialog(),
-        valueAdded: function (fs) { }
+        dlgAddPropertyValue: new AddPropertyValueDialog()
     };
-    var opts = $.extend(defaults, options);
+    options = $.extend(defaults, options);
     log('get_renderProperty3');
 
     return function (placeHolder, propertyId, subjectId, options2) {
@@ -1711,7 +1710,7 @@ $.fn.conceptProperties = function (conceptId, options) {
                     Nagu.CM.getPropertyValues(conceptId, propertyId, {
                         flush: true
                     }).done(function (fss) {
-                        var pvdd = $('dd[pvsFor="' + pv.Key + '"]');
+                        var pvdd = $('dd[pvsFor="' + propertyId + '"]');
                         opts.renderPropertyValues(pvdd, propertyId, fss, conceptId);
                     });
                 }
