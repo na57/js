@@ -901,7 +901,13 @@ MemberManager.prototype.createFavoriteGroup = function (name) {
                     Nagu.User.FavoriteGroup, group.ConceptId,
                     Nagu.MType.Concept, me.Id).done(function (fs) {
                         dtd.resolve(group, fs);
-                });
+                    });
+
+                // 添加rdf:Bag类型
+                Nagu.SM.create(group.ConceptId, Nagu.MType.Concept,
+                    Nagu.Rdf.Type,
+                    Nagu.Rdf.Bag, Nagu.MType.Concept,
+                    me.Id);
             });
         });
     }

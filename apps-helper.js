@@ -1830,8 +1830,8 @@ Dialog.prototype.setOptions = function (options) {
 // 初始化对话框中的“可见范围”列表。
 Dialog.InitAppList = function (listApps) {
     var dtd = $.Deferred();
-    listApps.empty();
-    $('<option/>').attr('value', '').text('公开').appendTo(listApps);
+    listApps.children().not('.const').remove();
+    //$('<option/>').attr('value', '').text('公开').appendTo(listApps);
 
     // 初始化“私有选项”。
     Nagu.MM.getMe().done(function (me) {

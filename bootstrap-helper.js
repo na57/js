@@ -48,3 +48,14 @@ B.li = function () {
 };
 B.a = function () { return $('<a/>').attr('href', '#'); };
 B.ul = function () { return $('<ul/>'); };
+B.span = function () { return $('<span/>'); };
+B.div = function () { return $('<div/>'); };
+B.label = function () { return $('<label/>'); };
+B.tr = function () { return $('<tr/>'); };
+B.td = function () { return $('<td/>'); };
+B.input = function () { return $('<input/>'); };
+
+
+B.divControlGroup = function () { return B.div().addClass('control-group'); };
+B.labelControlLabel = function () { return B.label().addClass('control-label'); };
+B.divControls = function () { return B.div().addClass('controls'); };
