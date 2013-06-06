@@ -41,3 +41,10 @@ function Icon(cssClass) {
 function IconPlus() {
     return Icon("icon-plus");
 }
+
+var B = function () { };
+B.li = function () {
+    return $('<li/>');
+};
+B.a = function () { return $('<a/>').attr('href', '#'); };
+B.ul = function () { return $('<ul/>'); };
