@@ -53,9 +53,19 @@ B.div = function () { return $('<div/>'); };
 B.label = function () { return $('<label/>'); };
 B.tr = function () { return $('<tr/>'); };
 B.td = function () { return $('<td/>'); };
+B.th = function () { return $('<th/>'); };
+B.select = function () { return $('<select/>'); };
+B.option = function () { return $('<option/>'); };
 B.input = function () { return $('<input/>'); };
 
 
 B.divControlGroup = function () { return B.div().addClass('control-group'); };
 B.labelControlLabel = function () { return B.label().addClass('control-label'); };
 B.divControls = function () { return B.div().addClass('controls'); };
+B.spanLabel = function () { return B.span().addClass('label'); };
+B.spanLabelSuccess = function () { return B.span().addClass('label label-success'); };
+B.spanLabelWarning = function () { return B.span().addClass('label label-warning'); };
+B.spanLabelImportant = function () { return B.span().addClass('label label-important'); };
+B.spanLabelInfo = function () { return B.span().addClass('label label-info'); };
+B.spanLabelInverse = function () { return B.span().addClass('label label-inverse'); };
+

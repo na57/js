@@ -24,7 +24,8 @@ Nagu.Concepts = {
     articleContent:     '6bef4f02-1d1d-4161-b017-0e9e4879883c',
     Literal:            '26a11dbc-f50a-480e-9ff4-7106f1af3fcb',
     SystemTypeBag: '76b2ba52-0f0c-4a76-b899-65e921092c28',  // “系统预定义类型”包
-    App: 'f1933904-6bac-425b-abf8-c5f4032a380f' // 描述“应用”的类
+    App: 'f1933904-6bac-425b-abf8-c5f4032a380f', // 描述“应用”的类,
+    HasInstancesProperty: '73858269-4f00-4b4f-bb70-905d2256e9a4' // 描述“实例包含的属性”的谓词
 };
 
 Nagu.Article = {
@@ -61,6 +62,8 @@ Nagu.User = {
 };
 
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
+
+Nagu.host = 'http://nagu.cc';
 Nagu.init = function (options) {
     var defaults = {
         host: "",
@@ -533,7 +536,7 @@ StatementManager.prototype.findBySP = function (subject, stype, predicate, optio
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey('', subject, predicate, '', opts.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
-        $.post(host + "/MorphemeApi/FindBySP/" + subject,
+        $.post(Nagu.host + "/MorphemeApi/FindBySP/" + subject,
         {
             stype: stype,
             predicateId: predicate,
@@ -584,7 +587,7 @@ StatementManager.prototype.findBySPO = function (subjectId,  predicateId, object
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey('', subjectId, predicateId, objectId, opts.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
-        $.post(host + "/MorphemeApi/FindBySPO/" + subjectId,
+        $.post(Nagu.host + "/MorphemeApi/FindBySPO/" + subjectId,
         {
             stype: opts.stype,
             predicateId: predicateId,
