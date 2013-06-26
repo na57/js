@@ -261,7 +261,7 @@ ConceptManager.prototype.create = function (fn, desc, options) {
             //ConceptManager.ConceptCache[c.ConceptId] = c;
             ConceptManager.setCachedConcept(c);
             dtd.resolve(c);
-        }).fail(function () { alert('ConceptManager.create失败'); dtd.reject(); });
+        }).fail(function () { dtd.reject(); });
     }
     return dtd.promise(); // 返回promise对象
 };
@@ -630,7 +630,22 @@ StatementManager.prototype.findSByPO = function (predicateId, objectId, oType, o
     return dtd.promise();
 };
 
-
+// 批量创建语句
+StatementManager.prototype.bulkCreate = function (fss, options) {
+    for (var i = 0; i < fss.length; i++) {
+        if (fss[i].AppId == '') fss[i].AppId = Nagu.App.Public;
+    }
+    var dtd = $.Deferred();
+    $.ajax(Nagu.host + '/statementApi/bulkCreate', {
+        dataType: 'jsonp',
+        success: function (data) {
+            dtd.resolve(data);
+        },
+        data: { fss: SerializeJsonToStr(fss) },
+        type: 'post'
+    });
+    return dtd.promise();
+}
 
 StatementManager.prototype.get = function (id) {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
@@ -685,7 +700,7 @@ function propertyValuesFormBaseClass(subject, sType, rdfType, appId) {
             rdfType: rdfType,
             appId: appId
         };
-        $.getJSON(host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + subject, params).done(function (pvs) {
+        $.getJSON("/MorphemeApi/GetPropertyValuesFormBaseClass/" + subject, params).done(function (pvs) {
             PvsFromBaseClass[subject][rdfType] = pvs;
             dtd.resolve(pvs);
         });
@@ -980,4 +995,43 @@ DialogManager.prototype.get = function (url) {
 
 function log(text) {
     $('#txtDebug').val($('#txtDebug').val() + text + '\r\n');
+}
+
+
+function SerializeJsonToStr(oJson) {
+    if (typeof (oJson) == typeof (false)) {
+        return oJson;
+    }
+    if (oJson == null) {
+        return "null";
+    }
+    if (typeof (oJson) == typeof (0))
+        return oJson.toString();
+    if (typeof (oJson) == typeof ('') || oJson instanceof String) {
+        oJson = oJson.toString();
+        oJson = oJson.replace(/\r\n/, '\\r\\n');
+        oJson = oJson.replace(/\n/, '\\n');
+        oJson = oJson.replace(/\"/, '\\"');
+        return '"' + oJson + '"';
+    }
+    if (oJson instanceof Array) {
+        var strRet = "[";
+        for (var i = 0; i < oJson.length; i++) {
+            if (strRet.length > 1)
+                strRet += ",";
+            strRet += SerializeJsonToStr(oJson[i]);
+        }
+        strRet += "]";
+        return strRet;
+    }
+    if (typeof (oJson) == typeof ({})) {
+        var strRet = "{";
+        for (var p in oJson) {
+            if (strRet.length > 1)
+                strRet += ",";
+            strRet += '"' + p.toString() + '":' + SerializeJsonToStr(oJson[p]);
+        }
+        strRet += "}";
+        return strRet;
+    }
 }

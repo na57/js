@@ -877,7 +877,7 @@ function ImageShowDialog(options) {
         appId: "",
         templateUrl: "/Apps/private/dialog/imageShow.html",
         dialogId: "dlgImageShow",
-        autoInit: true,
+        autoInit: true
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);

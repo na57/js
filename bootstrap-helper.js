@@ -57,6 +57,8 @@ B.th = function () { return $('<th/>'); };
 B.select = function () { return $('<select/>'); };
 B.option = function () { return $('<option/>'); };
 B.input = function () { return $('<input/>'); };
+B.br = function () { return $('<br/>'); };
+
 
 
 B.divControlGroup = function () { return B.div().addClass('control-group'); };
@@ -69,3 +71,15 @@ B.spanLabelImportant = function () { return B.span().addClass('label label-impor
 B.spanLabelInfo = function () { return B.span().addClass('label label-info'); };
 B.spanLabelInverse = function () { return B.span().addClass('label label-inverse'); };
 
+B.spanBadge = function () { return B.span().addClass('badge'); };
+B.spanBadgeSuccess = function () { return B.spanBadge().addClass('badge-success'); };
+B.spanBadgeWarning = function () { return B.spanBadge().addClass('badge-warning'); };
+B.spanBadgeImportant = function () { return B.spanBadge().addClass('badge-important'); };
+B.spanBadgeInfo = function () { return B.spanBadge().addClass('badge-info'); };
+B.spanBadgeInverse = function () { return B.spanBadge().addClass('badge-inverse'); };
+
+B.divProgress = function () { return B.div().addClass('progress'); };
+B.divBar = function () { return B.div().addClass('bar'); };
+B.divBarSuccess = function () { return B.div().addClass('bar bar-success'); };
+B.divBarWarning = function () { return B.div().addClass('bar bar-warning'); };
+B.divBarDanger = function () { return B.div().addClass('bar bar-danger'); };
