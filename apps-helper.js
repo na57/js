@@ -202,11 +202,11 @@ function addConceptPropertyValue(subject, stype, propertyId, objectFn, objectId,
 
 
 /***********************************************************************************************************************************************************/
-$.fn.appendMorpheme = function (morpheme) {
+$.fn.appendMorpheme = function (morpheme, options) {
     var dtd = $.Deferred();
     var ph = $(this);
     if (morpheme.ConceptId) {
-        return ph.appendConcept(morpheme.ConceptId);
+        return ph.appendConcept(morpheme.ConceptId, options);
     }
     else if (morpheme.Value) {
         ph.text(morpheme.Value);
@@ -219,15 +219,18 @@ $.fn.appendMorpheme = function (morpheme) {
     return dtd.promise();
 };
 
-$.fn.appendConcept = function (cid) {
+$.fn.appendConcept = function (cid, options) {
+    var defaults = {
+        appended: function (cid, a) { }
+    }
+    options = $.extend(defaults, options);
     var ph = $(this);
     var a = newA().append(loadingImg()).appendTo(ph);
-
-
+    a.attr('conceptId', cid)
     return Nagu.CM.get(cid).done(function (c) {
-        a.empty().text(c.FriendlyNames[0]).attr('conceptId', c.ConceptId);
-        a.attr('title', c.Descriptions[0]);
-    }).fail(function () { a.empty().text('数据加载失败'); });
+        a.text(c.FriendlyNames[0]).attr('title', c.Descriptions[0]);
+        options.appended(cid, a);
+    }).fail(function () { a.text('数据加载失败'); });
 };
 
 function renderMorpheme2(morpheme, ph) {
@@ -927,7 +930,7 @@ function BagShowDialog(options) {
         appId: "",
         templateUrl: "/Apps/private/dialog/bagShow.html",
         dialogId: "dlgBagShow",
-        autoInit: true,
+        autoInit: true
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
@@ -2193,3 +2196,54 @@ $.fn.btnCleanStorage = function () {
     }
     return ph;
 };
+
+
+
+
+
+
+
+/******** 登录/退出 ****************************************************************/
+
+
+// 当nagu未登录或用户退出之后
+function naguLogout() {
+    $('.nagu-logged').hide();
+    $('.nagu-logout').show();
+
+    if (dlgLogin === undefined) {
+        dlgLogin = new LoginDialog();
+    }
+}
+
+function afterNaguLogin(me) {
+    $('.nagu-logged').show();
+    $('.nagu-logout').hide();
+    createConceptDialog = new CreateConceptDialog();
+
+    // 显示“帐户信息”
+    $('#accountInfo').attr('href', '/apps/public/concept.html?id=' + me.Id);
+
+    // 如果QQ已绑定，显示QQ图标。
+    if (me.QcOpenId != '') {
+        var qqimg = $('<img/>').attr('src', 'http://qzonestyle.gtimg.cn/qzone/vas/opensns/res/img/Connect_logo_1.png');
+        $('#accountInfo').prepend(qqimg);
+    }
+}
+
+function logout() {
+    Nagu.MM.logout().done(function () {
+        $.jStorage.flush();
+        naguLogout();
+    });
+}
+
+//function checkLogin() {
+//    Nagu.MM.getMe().done(function (me) {
+//        if (me.ret == -1) {
+//            naguLogout();
+//        } else {
+//            afterNaguLogin(me);
+//        }
+//    });
+//}

@@ -64,6 +64,15 @@ Nagu.User = {
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 
 Nagu.host = 'http://nagu.cc';
+Nagu.commonOption = {
+    saidBy: '',
+    appId: '',
+    host: 'http://nagu.cc',
+    flush: false,
+    useLocalStorage: true,
+    useCache: true
+};
+
 Nagu.init = function (options) {
     var defaults = {
         host: "",
@@ -150,6 +159,9 @@ SayManager.prototype.status = function (statementId) {
         dtd.resolve(SayManager.SaidCache[statementId]);
     }
     return dtd.promise();
+};
+SayManager.prototype.saidBy = function (statementId) {
+    return $.post(Nagu.host + '/statementApi/SaidBy/' + statementId);
 };
 
 
@@ -929,6 +941,44 @@ MemberManager.prototype.createFavoriteGroup = function (name) {
             });
         });
     }
+    return dtd.promise();
+};
+
+MemberManager.prototype.registerFrom = function (source, userName, openId, accessToken, figure) {
+    return $.post(Nagu.host + '/MemberApi/RegisterFrom', {
+        source: source,
+        userName: userName,
+        openId: openId,
+        accessToken: accessToken,
+        figure: figure
+    });
+}
+
+MemberManager.UserInfo = [];
+MemberManager.prototype.getUserInfo = function (uid) {
+    var dtd = $.Deferred();
+    if ($.jStorage && $.jStorage.storageAvailable()) {
+        if ($.jStorage.get('user_' + uid, null) != null) {
+            dtd.resolve($.jStorage.get('user_' + uid, null));
+            return dtd.promise();
+        }
+    } else {
+        if (MemberManager.UserInfo['user_' + uid] !== undefined) {
+            dtd.resolve(MemberManager.UserInfo['user_' + uid]);
+            return dtd.promise();
+        }
+    }
+    $.post(Nagu.host + '/MemberApi/GetUserInfo/' + uid).done(function (user) {
+        if ($.jStorage && $.jStorage.storageAvailable()) {
+            $.jStorage.set('user_' + uid, user, {
+                // 默认存储时间为3天，为避免同时刷新，增加2个小时之内的随机时间
+                TTL: 259200000 + 7200000 * Math.random()
+            });
+        } else {
+            MemberManager.UserInfo['user_' + uid] = user;
+        }
+        dtd.resolve(user);
+    });
     return dtd.promise();
 };
 

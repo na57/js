@@ -58,7 +58,9 @@ B.select = function () { return $('<select/>'); };
 B.option = function () { return $('<option/>'); };
 B.input = function () { return $('<input/>'); };
 B.br = function () { return $('<br/>'); };
-
+B.h5 = function () { return $('<h5/>'); };
+B.h6 = function () { return $('<h6/>'); };
+B.img = function () { return $('<img/>'); };
 
 
 B.divControlGroup = function () { return B.div().addClass('control-group'); };
