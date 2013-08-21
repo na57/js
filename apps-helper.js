@@ -220,17 +220,20 @@ $.fn.appendMorpheme = function (morpheme, options) {
 };
 
 $.fn.appendConcept = function (cid, options) {
+    //var ph = $(this);
     var defaults = {
-        appended: function (cid, a) { }
+        appended: function (cid, a) { },
+        container: B.a().appendTo($(this))
     }
     options = $.extend(defaults, options);
-    var ph = $(this);
-    var a = newA().append(loadingImg()).appendTo(ph);
+    
+    var a = options.container.append(loadingImg());//.appendTo(ph);
     a.attr('conceptId', cid)
     return Nagu.CM.get(cid).done(function (c) {
         a.text(c.FriendlyNames[0]).attr('title', c.Descriptions[0]);
+        a.val(c.FriendlyNames[0]);
         options.appended(cid, a);
-    }).fail(function () { a.text('数据加载失败'); });
+    }).fail(function () { a.text('数据加载失败'); a.val('数据加载失败'); });
 };
 
 function renderMorpheme2(morpheme, ph) {
@@ -1834,7 +1837,6 @@ Dialog.prototype.setOptions = function (options) {
 Dialog.InitAppList = function (listApps) {
     var dtd = $.Deferred();
     listApps.children().not('.const').remove();
-    //$('<option/>').attr('value', '').text('公开').appendTo(listApps);
 
     // 初始化“私有选项”。
     Nagu.MM.getMe().done(function (me) {
@@ -1842,10 +1844,10 @@ Dialog.InitAppList = function (listApps) {
         option.text('私有').appendTo(listApps);
 
         // 将当前用户具有“app:Manager”权限的App列入列表中
-        Nagu.MM.manageableApps(me.Id).done(function(fss){
-            $.each(fss, function (i, fs) {
-                var opt = $('<option/>').attr('value', fs.Subject.ConceptId).appendTo(listApps);
-                Nagu.CM.get(fs.Subject.ConceptId).done(function (app) {
+        Nagu.AppM.list().done(function (apps) {
+            $.each(apps, function (i, app) {
+                var opt = $('<option/>').attr('value', app.ConceptId).appendTo(listApps);
+                Nagu.CM.get(app.ConceptId).done(function (app) {
                     opt.text(app.FriendlyNames[0]);
                 });
             });

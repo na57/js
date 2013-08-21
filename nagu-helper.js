@@ -11,6 +11,10 @@ Nagu.MType = {
     Concept:    1025,
     ConceptDb:  1026
 };
+Nagu.Meta = {
+    True: '00000000-0000-0000-0001-000000000001',
+    False: '00000000-0000-0000-0001-000000000002'
+}
 Nagu.Concepts = {
     RdfType:            "4c5b16cd-d526-48cb-948e-250ce21facc8",
     OwlClass:           "280ab0ee-7fda-4d29-9a0e-eed7850fe3b2",
@@ -98,6 +102,7 @@ Nagu.init = function (options) {
     Nagu.MM = new MemberManager(opts.host);
     Nagu.DialogM = new DialogManager();
     Nagu.SayM = new SayManager();
+    Nagu.AppM = new AppManager();
 };
 Nagu.init();
 
@@ -465,6 +470,31 @@ ConceptManager.removeCachedConcept = function (cid) {
 };
 
 
+ConceptManager.prototype.pvsFromType = function (cid, typeId, options) {
+    var defaults = {
+        appId: ''
+    };
+    var opts = $.extend(defaults, options);
+
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    var cacheKey = 'subject_' + cid + '_rdfType_' + typeId;
+    if (PvsFromBaseClass[cid] === undefined) PvsFromBaseClass[cid] = new Array();
+    if (PvsFromBaseClass[cid][typeId] === undefined) {
+        var params = {
+            subject: cid,
+            mtype: Nagu.MType.Concept,
+            rdfType: typeId,
+            appId: opts.appId
+        };
+        $.post("/MorphemeApi/GetPropertyValuesFormBaseClass/" + cid, params).done(function (pvs) {
+            PvsFromBaseClass[cid][typeId] = pvs;
+            dtd.resolve(pvs);
+        });
+    } else {
+        dtd.resolve(PvsFromBaseClass[cid][typeId]);
+    }
+    return dtd.promise();
+}
 
 
 /***Morpheme操作*****************************************************************************************************************************/
@@ -566,6 +596,7 @@ StatementManager.prototype.findByPO = function (predicateId, objectId, oType, op
     var defaults = {
         appId: ''
     };
+    if (oType === undefined) oType = Nagu.MType.Concept;
     // Extend our default options with those provided.    
     var opts = $.extend(defaults, options);
 
@@ -983,6 +1014,14 @@ MemberManager.prototype.getUserInfo = function (uid) {
 };
 
 
+MemberManager.prototype.wxStatus = function (openId, mpId) {
+    return $.post(Nagu.host + "/MemberApi/WxStatus", {
+        openId: openId,
+        mpId: mpId
+    });
+};
+
+
 /*** WeiboManager 类*****************************************************************************************************************************/
 function WeiboManager(options) {
 }
@@ -995,11 +1034,97 @@ WeiboManager.prototype.shorten = function (url_long) {
 
 
 
+/*** AppManager 类*****************************************************************************************************************************/
+function AppManager() { }
+
+AppManager.prototype.list = function (options) {
+    return $.post(Nagu.host + '/AppApi/List/');
+};
+
+AppManager.prototype.get = function (appId, options) {
+    return $.post(Nagu.host + '/AppApi/Get/' + appId);
+};
+
+AppManager.prototype.create = function (fn, desc) {
+    var dtd = $.Deferred();
+    $.post(Nagu.host + '/AppApi/Create/', {
+        fn: fn,
+        desc: desc
+    }).done(function (app) {
+        dtd.resolve(app);
+    });
+    return dtd.promise();
+};
+
+AppManager.prototype.delete = function (appId) {
+    var dtd = $.Deferred();
+    $.post(Nagu.host + '/AppApi/Delete/' + appId).done(function (data) {
+        if (data.ret == 0) {
+            dtd.resolve(data);
+        } else dtd.reject(data);
+    });
+    return dtd.promise();
+};
+
+AppManager.prototype.addNewKey = function (appId, fn, desc, auth, expire) {
+    var dtd = $.Deferred();
+    $.post(Nagu.host + '/AppApi/AddKey/'+appId, {
+        fn: fn,
+        desc: desc,
+        auth: auth,
+        expire: expire
+    }).done(function (key) {
+        dtd.resolve(key);
+    });
+    return dtd.promise();
+};
+
+AppManager.prototype.addKey = function (appId, keyId) {
+    var dtd = $.Deferred();
+    $.post(Nagu.host + '/AppApi/AddKey/' + appId, {
+        keyId:keyId
+    }).done(function (key) {
+        dtd.resolve(key);
+    });
+    return dtd.promise();
+};
 
 
+AppManager.prototype.keys = function (appId) {
+    var dtd = $.Deferred();
 
+    // 根据指定的AppId获取Key
+    if (appId !== undefined) {
+        $.post(Nagu.host + '/AppApi/ListKeys/' + appId).done(function (keys) {
+            dtd.resolve(keys);
+        });
+    // 获取当前用户所管理的所有App的Key
+    } else {
+        $.post(Nagu.host + '/AppApi/AllKeys/').done(function (keys) {
+            dtd.resolve(keys);
+        });
+    }
+    return dtd.promise();
+};
 
+AppManager.prototype.getKey = function (keyId) {
+    var dtd = $.Deferred();
+    $.post(Nagu.host + '/AppApi/GetKey/' + keyId).done(function (key) {
+        dtd.resolve(key);
+    });
+    return dtd.promise();
+};
 
+AppManager.prototype.deleteKey = function (appId, keyId) {
+    var dtd = $.Deferred();
+    $.post(Nagu.host + '/AppApi/DeleteKey/', {
+        appId: appId,
+        keyId: keyId
+    }).done(function (data) {
+        dtd.resolve(data);
+    });
+    return dtd.promise();
+};
 
 /*** DialogManager 类*****************************************************************************************************************************/
 function DialogManager(options) {
@@ -1048,40 +1173,3 @@ function log(text) {
 }
 
 
-function SerializeJsonToStr(oJson) {
-    if (typeof (oJson) == typeof (false)) {
-        return oJson;
-    }
-    if (oJson == null) {
-        return "null";
-    }
-    if (typeof (oJson) == typeof (0))
-        return oJson.toString();
-    if (typeof (oJson) == typeof ('') || oJson instanceof String) {
-        oJson = oJson.toString();
-        oJson = oJson.replace(/\r\n/, '\\r\\n');
-        oJson = oJson.replace(/\n/, '\\n');
-        oJson = oJson.replace(/\"/, '\\"');
-        return '"' + oJson + '"';
-    }
-    if (oJson instanceof Array) {
-        var strRet = "[";
-        for (var i = 0; i < oJson.length; i++) {
-            if (strRet.length > 1)
-                strRet += ",";
-            strRet += SerializeJsonToStr(oJson[i]);
-        }
-        strRet += "]";
-        return strRet;
-    }
-    if (typeof (oJson) == typeof ({})) {
-        var strRet = "{";
-        for (var p in oJson) {
-            if (strRet.length > 1)
-                strRet += ",";
-            strRet += '"' + p.toString() + '":' + SerializeJsonToStr(oJson[p]);
-        }
-        strRet += "}";
-        return strRet;
-    }
-}

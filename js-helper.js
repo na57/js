@@ -52,3 +52,41 @@ function formatJSONDate(jsonDate, format) {
 function randomInt() {
     return Math.round(Math.random() * 10000000000000);
 }
+
+function SerializeJsonToStr(oJson) {
+    if (typeof (oJson) == typeof (false)) {
+        return oJson;
+    }
+    if (oJson == null) {
+        return "null";
+    }
+    if (typeof (oJson) == typeof (0))
+        return oJson.toString();
+    if (typeof (oJson) == typeof ('') || oJson instanceof String) {
+        oJson = oJson.toString();
+        oJson = oJson.replace(/\r\n/, '\\r\\n');
+        oJson = oJson.replace(/\n/, '\\n');
+        oJson = oJson.replace(/\"/, '\\"');
+        return '"' + oJson + '"';
+    }
+    if (oJson instanceof Array) {
+        var strRet = "[";
+        for (var i = 0; i < oJson.length; i++) {
+            if (strRet.length > 1)
+                strRet += ",";
+            strRet += SerializeJsonToStr(oJson[i]);
+        }
+        strRet += "]";
+        return strRet;
+    }
+    if (typeof (oJson) == typeof ({})) {
+        var strRet = "{";
+        for (var p in oJson) {
+            if (strRet.length > 1)
+                strRet += ",";
+            strRet += '"' + p.toString() + '":' + SerializeJsonToStr(oJson[p]);
+        }
+        strRet += "}";
+        return strRet;
+    }
+}
