@@ -1897,6 +1897,7 @@ function CreateConceptDialog(options) {
         dialogId: "dlgCreateConcept" + randomInt(),
         fnId: "tbConceptName" + randomInt(),
         descId: "tbConceptDesc" + randomInt(),
+        listApps: "listApps"+randomInt(),
         autoInit: true,
         h3: '创建新Concept',
         onAdded: function (concept) {
@@ -1917,10 +1918,12 @@ CreateConceptDialog.prototype.init = function () {
     var dialogId = this.opts.dialogId;
     var txtFnId = this.opts.fnId;
     var txtDescId = this.opts.descId;
+    var listApps = this.opts.listApps;
     return $.get(this.opts.templateUrl).done(function (html) {
         html = html.replace(/{dlgCreateConcept}/g, dialogId);
         html = html.replace(/{txtConceptName}/g, txtFnId);
         html = html.replace(/{txtConceptDesc}/g, txtDescId);
+        html = html.replace(/{listApps}/g, listApps);
         $('body').append(html);
     });
 };

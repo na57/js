@@ -62,7 +62,8 @@ Nagu.Image = {
 
 Nagu.User = {
     Favorite: '985902bb-34a5-454a-b4be-8771d511635b',
-    FavoriteGroup: '56b10810-7ffd-4e39-925b-bf270544624c'
+    FavoriteGroup: '56b10810-7ffd-4e39-925b-bf270544624c',
+    HasPicture: '64e11d2c-5ee3-4d22-ac8c-0043d8c69263'
 };
 
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
@@ -74,7 +75,10 @@ Nagu.commonOption = {
     host: 'http://nagu.cc',
     flush: false,
     useLocalStorage: true,
-    useCache: true
+    useCache: true,
+    keys: '',
+    pageIndex: 0,
+    pageSize: 99999999999
 };
 
 Nagu.init = function (options) {
@@ -496,6 +500,17 @@ ConceptManager.prototype.pvsFromType = function (cid, typeId, options) {
     return dtd.promise();
 }
 
+ConceptManager.prototype.types = function (cid, options) {
+    var dtd = $.Deferred();
+    $.ajax(Nagu.host + '/morphemeApi/GetTypes/'+cid, {
+        dataType: 'jsonp',
+        success: function (data) {
+            dtd.resolve(data);
+        },
+        type: 'post'
+    });
+    return dtd.promise();
+};
 
 /***Morpheme操作*****************************************************************************************************************************/
 function MorphemeManager(options){
