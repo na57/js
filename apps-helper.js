@@ -676,7 +676,7 @@ AddPropertyValueDialog.prototype.init = function () {
     var contentId = this.opts.contentId;
     var accordionConceptId = this.opts.accordionConceptId;
     var btnNewId = this.opts.btnNewId;
-    var listAppsId = this.opts.listApps;
+    var listAppsId = this.opts.listAppsId;
 
     Nagu.DialogM.get(this.opts.templateUrl).done(function(html){
         $('body #' + dialogId).remove();

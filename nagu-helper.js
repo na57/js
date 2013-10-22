@@ -1141,15 +1141,31 @@ WeiboManager.prototype.shorten = function (url_long) {
 function AppManager() { }
 
 AppManager.prototype.list = function (options) {
-    return $.jsonp({
-        url: 'http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/List/'
+    var dtd = $.Deferred();
+    $.jsonp({
+        url: 'http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/List/?callback=?',
+        success: function (cs) {
+            dtd.resolve(cs);
+        },
+        error: function (a,b,c) {
+            dtd.reject();
+        }
     });
+    return dtd.promise();
 };
 
 AppManager.prototype.get = function (appId, options) {
-    return $.jsonp({
-        url: 'http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/Get/' + appId
+    var dtd = $.Deferred();
+    $.jsonp({
+        url: 'http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/Get/' + appId + '?callback=?',
+        success: function (c) {
+            dtd.resolve(c);
+        },
+        error: function () {
+            dtd.reject();
+        }
     });
+    return dtd.promise();
 };
 
 AppManager.prototype.create = function (fn, desc) {
