@@ -68,7 +68,18 @@ Nagu.User = {
 
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 
-Nagu.host = 'http://nagu.cc';
+Nagu.hosts = [
+    'nagu.cc',
+    'api0.nagu.cc',
+    'api1.nagu.cc',
+    'api2.nagu.cc',
+    'api3.nagu.cc',
+    'api4.nagu.cc',
+    'api5.nagu.cc'
+];
+
+Nagu.loggedHosts = [];
+
 Nagu.commonOption = {
     saidBy: '',
     appId: '',
@@ -82,28 +93,23 @@ Nagu.commonOption = {
 };
 
 Nagu.init = function (options) {
-    var defaults = {
-        host: "",
-        appId: "",
-        useIframe: false,
-        iframeId: ''
-    };
-    // Extend our default options with those provided.    
-    var opts = $.extend(defaults, options);
 
-    // 确保页面上有iframe
-    if (opts.useIframe && opts.iframeId == '') {
-        opts.iframeId = 'pmIframe' + randomInt();
-        var iframe = $('<iframe style="width: 0px; height: 0px; display: none; overflow: hidden;" src="http://nagu.cc/apps/pmproxy.html"></iframe>');
-        iframe.attr('id',opts.iframeId).appendTo($('body'));
-    }
-    // 初始化messenger
-    if (opts.useIframe) {
-        Nagu.Messenger = Messenger.initInParent(document.getElementById(opts.iframeId));
-    }
-    Nagu.CM = new ConceptManager(opts);
-    Nagu.SM = new StatementManager(opts.host);
-    Nagu.MM = new MemberManager(opts.host);
+    // Extend our default options with those provided.    
+    //var opts = $.extend(defaults, options);
+
+    //// 确保页面上有iframe
+    //if (opts.useIframe && opts.iframeId == '') {
+    //    opts.iframeId = 'pmIframe' + randomInt();
+    //    var iframe = $('<iframe style="width: 0px; height: 0px; display: none; overflow: hidden;" src="http://nagu.cc/apps/pmproxy.html"></iframe>');
+    //    iframe.attr('id',opts.iframeId).appendTo($('body'));
+    //}
+    //// 初始化messenger
+    //if (opts.useIframe) {
+    //    Nagu.Messenger = Messenger.initInParent(document.getElementById(opts.iframeId));
+    //}
+    Nagu.CM = new ConceptManager(Nagu.commonOption);
+    Nagu.SM = new StatementManager(Nagu.commonOption.host);
+    Nagu.MM = new MemberManager(Nagu.commonOption.host);
     Nagu.DialogM = new DialogManager();
     Nagu.SayM = new SayManager();
     Nagu.AppM = new AppManager();
@@ -170,7 +176,7 @@ SayManager.prototype.status = function (statementId) {
     return dtd.promise();
 };
 SayManager.prototype.saidBy = function (statementId) {
-    return $.post(Nagu.host + '/statementApi/SaidBy/' + statementId);
+    return $.post(Nagu.commonOption.host + '/statementApi/SaidBy/' + statementId);
 };
 
 
@@ -234,20 +240,27 @@ ConceptManager.send = function (message, iframeId) {
     return dtd.promise();
 };
 ConceptManager.prototype.get = function (id, options) {
-    var defaults = {
-        flush: false
-    };
-    options = $.extend(defaults, options);
+    options = $.extend(Nagu.commonOption, options);
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    if (id === undefined) {
+        log('CM.get error: id is not undefined');
+        dtd.reject();
+        return dtd.promise();
+    }
     var result = ConceptManager.getCachedConcept(id);
     if (options.flush) result = undefined;
 
     if (result === undefined || result == null) {
-        $.getJSON(this.host + "/ConceptApi/Get/" + id).done(function (concept) {
-            ConceptManager.setCachedConcept(concept);
-            dtd.resolve(concept);
-        }).fail(function () {
-            dtd.reject();
+        $.ajax(options.host + "/ConceptApi/Get/" + id, {
+            dataType: 'jsonp',
+            success: function (concept){
+                ConceptManager.setCachedConcept(concept);
+                dtd.resolve(concept);
+            },
+            error: function(a,b,c){
+                dtd.reject();
+            },
+            type: 'post'
         });
     }
     else {
@@ -407,11 +420,7 @@ ConceptManager.prototype.isImage = function (conceptId) {
 
 ConceptManager.PropertyAndValues = [];
 ConceptManager.prototype.getPropertyValues = function (conceptId, propertyId, options) {
-    var defaults = {
-        appId: '',
-        flush: false
-    };
-    var opts = $.extend(defaults, options);
+    var opts = $.extend(Nagu.commonOption, options);
 
     var dtd = $.Deferred();
 
@@ -420,13 +429,21 @@ ConceptManager.prototype.getPropertyValues = function (conceptId, propertyId, op
     if (ConceptManager.PropertyAndValues[conceptId + propertyId] !== undefined)
         dtd.resolve(ConceptManager.PropertyAndValues[conceptId + propertyId]);
     else {
-        $.post('/MorphemeApi/GetPropertyValues/', {
-            subjectId: conceptId,
-            propertyId: propertyId,
-            appId: opts.appId
-        }).done(function (fss) {
-            ConceptManager.PropertyAndValues[conceptId + propertyId] = fss;
-            dtd.resolve(fss);
+        $.ajax(opts.host + "/MorphemeApi/GetPropertyValues/", {
+            dataType: 'jsonp',
+            success: function (fss) {
+                ConceptManager.PropertyAndValues[conceptId + propertyId] = fss;
+                dtd.resolve(fss);
+            },
+            error: function (a, b, c) {
+                dtd.reject();
+            },
+            type: 'post',
+            data: {
+                subjectId: conceptId,
+                propertyId: propertyId,
+                appId: opts.appId
+            }
         });
     }
     return dtd.promise();
@@ -439,11 +456,14 @@ ConceptManager.prototype.search = function (fn, options) {
         exact: true
     };
     var opts = $.extend(defaults, options);
-    return $.post('/ConceptApi/Search/', {
-        term: fn,
-        typeId: opts.typeId,
-        exact: opts.exact
-    })
+    return $.jsonp({
+        url: 'http://' + Nagu.hosts[parseInt(Math.random() * Nagu.hosts.length)] + '/ConceptApi/Search/?callback=?',
+        data: {
+            term: fn,
+            typeId: opts.typeId,
+            exact: opts.exact
+        }
+    });
 }
 
 ConceptManager.getCachedConcept = function (cid) {
@@ -475,24 +495,29 @@ ConceptManager.removeCachedConcept = function (cid) {
 
 
 ConceptManager.prototype.pvsFromType = function (cid, typeId, options) {
-    var defaults = {
-        appId: ''
-    };
-    var opts = $.extend(defaults, options);
+    var opts = $.extend(Nagu.commonOption, options);
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = 'subject_' + cid + '_rdfType_' + typeId;
     if (PvsFromBaseClass[cid] === undefined) PvsFromBaseClass[cid] = new Array();
     if (PvsFromBaseClass[cid][typeId] === undefined) {
-        var params = {
-            subject: cid,
-            mtype: Nagu.MType.Concept,
-            rdfType: typeId,
-            appId: opts.appId
-        };
-        $.post("/MorphemeApi/GetPropertyValuesFormBaseClass/" + cid, params).done(function (pvs) {
-            PvsFromBaseClass[cid][typeId] = pvs;
-            dtd.resolve(pvs);
+
+        $.ajax(opts.host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + cid, {
+            dataType: 'jsonp',
+            success: function (pvs) {
+                PvsFromBaseClass[cid][typeId] = pvs;
+                dtd.resolve(pvs);
+            },
+            error: function (a, b, c) {
+                dtd.reject();
+            },
+            type: 'post',
+            data: {
+                subject: cid,
+                mtype: Nagu.MType.Concept,
+                rdfType: typeId,
+                appId: opts.appId
+            }
         });
     } else {
         dtd.resolve(PvsFromBaseClass[cid][typeId]);
@@ -502,7 +527,7 @@ ConceptManager.prototype.pvsFromType = function (cid, typeId, options) {
 
 ConceptManager.prototype.types = function (cid, options) {
     var dtd = $.Deferred();
-    $.ajax(Nagu.host + '/morphemeApi/GetTypes/'+cid, {
+    $.ajax(Nagu.commonOption.host + '/morphemeApi/GetTypes/'+cid, {
         dataType: 'jsonp',
         success: function (data) {
             dtd.resolve(data);
@@ -593,7 +618,7 @@ StatementManager.prototype.findBySP = function (subject, stype, predicate, optio
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey('', subject, predicate, '', opts.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
-        $.post(Nagu.host + "/MorphemeApi/FindBySP/" + subject,
+        $.post(Nagu.commonOption.host + "/MorphemeApi/FindBySP/" + subject,
         {
             stype: stype,
             predicateId: predicate,
@@ -645,7 +670,7 @@ StatementManager.prototype.findBySPO = function (subjectId,  predicateId, object
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey('', subjectId, predicateId, objectId, opts.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
-        $.post(Nagu.host + "/MorphemeApi/FindBySPO/" + subjectId,
+        $.post(Nagu.commonOption.host + "/MorphemeApi/FindBySPO/" + subjectId,
         {
             stype: opts.stype,
             predicateId: predicateId,
@@ -694,7 +719,7 @@ StatementManager.prototype.bulkCreate = function (fss, options) {
         if (fss[i].AppId == '') fss[i].AppId = Nagu.App.Public;
     }
     var dtd = $.Deferred();
-    $.ajax(Nagu.host + '/statementApi/bulkCreate', {
+    $.ajax(Nagu.commonOption.host + '/statementApi/bulkCreate', {
         dataType: 'jsonp',
         success: function (data) {
             dtd.resolve(data);
@@ -779,20 +804,64 @@ function MemberManager(host) {
 }
 MemberManager.Cache = new Array();
 
-MemberManager.prototype.getMe = function () {
+MemberManager.prototype.getMe1 = function () {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     if (MemberManager.me === undefined)
-        $.post("/MemberApi/GetMe").done(function (me) {
-            log('getMe()::me.ret = ' + me.ret);
-
-            if (me.ret == 0) {
-                MemberManager.me = me;
-            } else {
-                log('getMe()::me.auth = ' + me.auth);
-            }
-            dtd.resolve(me);
-        }).fail(function () { dtd.reject(); });
+        $.ajax(Nagu.commonOption.host + '/MemberApi/GetMe', {
+            dataType: 'jsonp',
+            success: function (me) {
+                if (me.ret == 0) {
+                    MemberManager.me = me;
+                } else {
+                    log('getMe()::me.auth = ' + me.auth);
+                }
+                dtd.resolve(me);
+            },
+            error: function(a,b,c){
+                dtd.reject();
+            },
+            type: 'post'
+        });
     else dtd.resolve(MemberManager.me);
+    return dtd.promise();
+};
+
+MemberManager.prototype.getMe = function () {
+
+    if (MemberManager.mes === undefined) MemberManager.mes = [];
+    var dtds = [];
+    var loggedHosts = [];
+    $.each(Nagu.hosts, function (i, host) {
+        dtds[i] = $.Deferred(); //在函数内部，新建一个Deferred对象
+        if (MemberManager.mes[host] === undefined)
+            $.jsonp({
+                url: 'http://'+host + '/MemberApi/GetMe?callback=?', 
+                success: function (me) {
+                    if (me.ret == 0) {
+                        MemberManager.mes[host] = me;
+                        loggedHosts.push(host);
+                    }
+                    dtds[i].resolve();
+                },
+                error: function (a, b, c) {
+                    dtds[i].resolve();
+                }
+            });
+        else {
+            dtds[i].resolve();
+            loggedHosts.push(host);
+        }
+    });
+
+    var dtd = $.Deferred();
+    $.when.apply($, dtds).done(function () {
+        if(loggedHosts.length > 0){
+            Nagu.loggedHosts = $.unique(loggedHosts);
+            dtd.resolve(MemberManager.mes[Nagu.loggedHosts[0]]);
+        } else {
+            dtd.resolve({ ret: -1 });
+        }
+    });
     return dtd.promise();
 };
 
@@ -829,9 +898,14 @@ MemberManager.prototype.check = function () {
 };
 
 
-MemberManager.prototype.loginFromQC = function (openId, accessToken) {
-    return $.post(this.host + "/MemberApi/QQBack/" + openId, {
-        accessToken: accessToken
+MemberManager.prototype.oauthLogin = function (openId, accessToken, source, options) {
+    options = $.extend(Nagu.commonOption, options);
+    return $.jsonp({
+        url: "http://" + options.host + "/MemberApi/OauthLogin/" + openId + "?callback=?",
+        data: {
+            accessToken: accessToken,
+            source: source
+        }
     });
 };
 
@@ -873,9 +947,23 @@ MemberManager.prototype.favorite = function (conceptId, groupId) {
 };
 
 MemberManager.prototype.logout = function () {
-    return $.post("/MemberApi/Logout").done(function (result) {
-        MemberManager.me = undefined;
-    })
+    var dtds = [];
+    $.each(Nagu.loggedHosts, function (i, host) {
+        var dtd = $.Deferred();
+        dtds.push(dtd);
+        $.jsonp({
+            url: 'http://' + host + "/MemberApi/Logout",
+            error: function () {
+                dtd.resolve();
+                MemberManager.mes.pop(host);
+            },
+            success: function () {
+                dtd.resolve();
+                MemberManager.mes.pop(host);
+            }
+        });
+    });
+    return $.when.apply($, dtds);
 };
 
 // 获取当前用户的收藏分组
@@ -991,7 +1079,7 @@ MemberManager.prototype.createFavoriteGroup = function (name) {
 };
 
 MemberManager.prototype.registerFrom = function (source, userName, openId, accessToken, figure) {
-    return $.post(Nagu.host + '/MemberApi/RegisterFrom', {
+    return $.post(Nagu.commonOption.host + '/MemberApi/RegisterFrom', {
         source: source,
         userName: userName,
         openId: openId,
@@ -1014,7 +1102,7 @@ MemberManager.prototype.getUserInfo = function (uid) {
             return dtd.promise();
         }
     }
-    $.post(Nagu.host + '/MemberApi/GetUserInfo/' + uid).done(function (user) {
+    $.post(Nagu.commonOption.host + '/MemberApi/GetUserInfo/' + uid).done(function (user) {
         if ($.jStorage && $.jStorage.storageAvailable()) {
             $.jStorage.set('user_' + uid, user, {
                 // 默认存储时间为3天，为避免同时刷新，增加2个小时之内的随机时间
@@ -1030,7 +1118,7 @@ MemberManager.prototype.getUserInfo = function (uid) {
 
 
 MemberManager.prototype.wxStatus = function (openId, mpId) {
-    return $.post(Nagu.host + "/MemberApi/WxStatus", {
+    return $.post(Nagu.commonOption.host + "/MemberApi/WxStatus", {
         openId: openId,
         mpId: mpId
     });
@@ -1053,27 +1141,34 @@ WeiboManager.prototype.shorten = function (url_long) {
 function AppManager() { }
 
 AppManager.prototype.list = function (options) {
-    return $.post(Nagu.host + '/AppApi/List/');
+    return $.jsonp({
+        url: 'http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/List/'
+    });
 };
 
 AppManager.prototype.get = function (appId, options) {
-    return $.post(Nagu.host + '/AppApi/Get/' + appId);
+    return $.jsonp({
+        url: 'http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/Get/' + appId
+    });
 };
 
 AppManager.prototype.create = function (fn, desc) {
     var dtd = $.Deferred();
-    $.post(Nagu.host + '/AppApi/Create/', {
-        fn: fn,
-        desc: desc
+    $.jsonp({
+        url: 'http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/Create/',
+        data: {
+            fn: fn,
+            desc: desc
+        }
     }).done(function (app) {
         dtd.resolve(app);
     });
     return dtd.promise();
 };
 
-AppManager.prototype.delete = function (appId) {
+AppManager.prototype.del = function (appId) {
     var dtd = $.Deferred();
-    $.post(Nagu.host + '/AppApi/Delete/' + appId).done(function (data) {
+    $.post(Nagu.commonOption.host + '/AppApi/Delete/' + appId).done(function (data) {
         if (data.ret == 0) {
             dtd.resolve(data);
         } else dtd.reject(data);
@@ -1083,7 +1178,7 @@ AppManager.prototype.delete = function (appId) {
 
 AppManager.prototype.addNewKey = function (appId, fn, desc, auth, expire) {
     var dtd = $.Deferred();
-    $.post(Nagu.host + '/AppApi/AddKey/'+appId, {
+    $.post(Nagu.commonOption.host + '/AppApi/AddKey/'+appId, {
         fn: fn,
         desc: desc,
         auth: auth,
@@ -1096,7 +1191,7 @@ AppManager.prototype.addNewKey = function (appId, fn, desc, auth, expire) {
 
 AppManager.prototype.addKey = function (appId, keyId) {
     var dtd = $.Deferred();
-    $.post(Nagu.host + '/AppApi/AddKey/' + appId, {
+    $.post(Nagu.commonOption.host + '/AppApi/AddKey/' + appId, {
         keyId:keyId
     }).done(function (key) {
         dtd.resolve(key);
@@ -1110,12 +1205,12 @@ AppManager.prototype.keys = function (appId) {
 
     // 根据指定的AppId获取Key
     if (appId !== undefined) {
-        $.post(Nagu.host + '/AppApi/ListKeys/' + appId).done(function (keys) {
+        $.post(Nagu.commonOption.host + '/AppApi/ListKeys/' + appId).done(function (keys) {
             dtd.resolve(keys);
         });
     // 获取当前用户所管理的所有App的Key
     } else {
-        $.post(Nagu.host + '/AppApi/AllKeys/').done(function (keys) {
+        $.post(Nagu.commonOption.host + '/AppApi/AllKeys/').done(function (keys) {
             dtd.resolve(keys);
         });
     }
@@ -1124,7 +1219,7 @@ AppManager.prototype.keys = function (appId) {
 
 AppManager.prototype.getKey = function (keyId) {
     var dtd = $.Deferred();
-    $.post(Nagu.host + '/AppApi/GetKey/' + keyId).done(function (key) {
+    $.post(Nagu.commonOption.host + '/AppApi/GetKey/' + keyId).done(function (key) {
         dtd.resolve(key);
     });
     return dtd.promise();
@@ -1132,7 +1227,7 @@ AppManager.prototype.getKey = function (keyId) {
 
 AppManager.prototype.deleteKey = function (appId, keyId) {
     var dtd = $.Deferred();
-    $.post(Nagu.host + '/AppApi/DeleteKey/', {
+    $.post(Nagu.commonOption.host + '/AppApi/DeleteKey/', {
         appId: appId,
         keyId: keyId
     }).done(function (data) {
@@ -1188,3 +1283,24 @@ function log(text) {
 }
 
 
+Nagu.F = {
+    wrap: function (url) {
+        var host = Nagu.hosts[parseInt(Nagu.hosts.length * Math.random())];
+
+        var dtd = $.Deferred();
+        $.jsonp({
+            url: 'http://' + host + '/func/wrap/?url=' + encodeURIComponent(url) + '&callback=?'
+        }).done(function (result) {
+            //result.content = $('<div/>').html(result.content).text();
+            dtd.resolve(result);
+        });
+        return dtd.promise();
+    },
+    bulkWrap: function (urls) {
+        var host = Nagu.hosts[parseInt(Nagu.hosts.length * Math.random())];
+        urls = SerializeJsonToStr(urls);
+        return $.jsonp({
+            url: 'http://' + host + '/func/bulkWrap/?urls=' + encodeURIComponent(urls) + '&callback=?'
+        });
+    }
+};
