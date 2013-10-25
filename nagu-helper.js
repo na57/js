@@ -69,13 +69,13 @@ Nagu.User = {
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 
 Nagu.hosts = [
-    'nagu.cc',
-    'api0.nagu.cc',
-    'api1.nagu.cc',
-    'api2.nagu.cc',
-    'api3.nagu.cc',
-    'api4.nagu.cc',
-    'api5.nagu.cc'
+    'nagu.cc'
+    //'api0.nagu.cc',
+    //'api1.nagu.cc',
+    //'api2.nagu.cc',
+    //'api3.nagu.cc',
+    //'api4.nagu.cc',
+    //'api5.nagu.cc'
 ];
 
 Nagu.loggedHosts = [];
@@ -952,7 +952,7 @@ MemberManager.prototype.logout = function () {
         var dtd = $.Deferred();
         dtds.push(dtd);
         $.jsonp({
-            url: 'http://' + host + "/MemberApi/Logout",
+            url: 'http://' + host + "/MemberApi/Logout?callback=?",
             error: function () {
                 dtd.resolve();
                 MemberManager.mes.pop(host);
@@ -1171,7 +1171,7 @@ AppManager.prototype.get = function (appId, options) {
 AppManager.prototype.create = function (fn, desc) {
     var dtd = $.Deferred();
     $.jsonp({
-        url: 'http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/Create/',
+        url: 'http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/Create/?callback=?',
         data: {
             fn: fn,
             desc: desc
