@@ -1,13 +1,13 @@
 ﻿/******* MenuItem 类 ******************************************************************************************************************/
 /*
-参考手册: #8
+参考手册: #8: https://github.com/na57/js/issues/8
 */ 
 
 function MenuItem(options) {
     var defaults = {
         text: "菜单项名称",
-        click: function () { },
-        appended: function (li, a) { }
+        click: function () { }, // 菜单项的单击事件
+        appended: function (li, a) { } // 菜单项被添加到菜单后发生。
     };
     // Extend our default options with those provided.    
     this.opts = $.extend(defaults, options);
@@ -16,7 +16,6 @@ function MenuItem(options) {
 MenuItem.prototype.appendTo = function (placeHolder) {
     var menuA = newA().text(this.opts.text);
     menuA.click(this.opts.click);
-    //menuA.prepend($('<i></i>').addClass('icon-star'));
 
     var menuLi = newLi();
     
@@ -72,11 +71,16 @@ MenuItem.getSaidMI = function (statement, options) {
     });
 }
 
+
 MenuItem.getDirectMI = function (text, url) {
     return new MenuItem({
         text: text,
-        click: function () {
-            window.location = url;
+        //click: function () {
+        //    window.location = url;
+        //}
+        appended: function (li, a) {
+            a.attr('href', url);
+            a.unbind('click');
         }
     });
 };
@@ -158,7 +162,14 @@ MenuItem.TypeMIFunctions[Nagu.Rdf.Bag] = function (conceptId, options) {
     });
 };
 
+
+
 /******* Menu 类 ******************************************************************************************************************/
+
+/*
+ * 参考手册： #11: https://github.com/na57/js/issues/11
+ */
+
 function Menu(menuItems, options) {
     this.items = menuItems;
 
