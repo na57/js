@@ -239,6 +239,8 @@ ConceptManager.send = function (message, iframeId) {
 
     return dtd.promise();
 };
+
+// 获取概念信息
 ConceptManager.prototype.get = function (id, options) {
     options = $.extend(Nagu.commonOption, options);
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
@@ -268,6 +270,7 @@ ConceptManager.prototype.get = function (id, options) {
     }
     return dtd.promise(); // 返回promise对象
 }
+
 ConceptManager.prototype.create = function (fn, desc, options) {
     var defaults = {
         id: '',
@@ -535,6 +538,56 @@ ConceptManager.prototype.types = function (cid, options) {
         type: 'post'
     });
     return dtd.promise();
+};
+
+ConceptManager.prototype.bulkGet = function (cIds, options) {
+    options = $.extend(Nagu.commonOption, options);
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+    if (cIds === undefined) {
+        log('CM.bulkGet error: ids is not undefined');
+        dtd.reject();
+        return dtd.promise();
+    }
+    var gettingIds = $.grep(cIds, function (id) {
+        var result = ConceptManager.getCachedConcept(id);
+        if (options.flush) result = undefined;
+        return (result === undefined || result == null);
+    });
+    if (gettingIds.length > 0) {
+        $.ajax(options.host + "/ConceptApi/BulkGet/", {
+            dataType: 'jsonp',
+            data: {
+                ids: SerializeJsonToStr(gettingIds)
+            },
+            success: function (cs) {
+                if (cs.ret == 0) {
+                    for (var i = 0; i < gettingIds.length; i++) {
+                        var c = cs.result[gettingIds[i]];
+                        if (c && cs.result[gettingIds[i]].ret == 0) {
+                            ConceptManager.setCachedConcept(cs.result[gettingIds[i]]);
+                        }
+                    }
+                    var cs = [];
+                    for (var i = 0; i < cIds.length; i++) {
+                        cs.push(ConceptManager.getCachedConcept(cIds[i]));
+                    }
+                    dtd.resolve(cs);
+                } else {
+                    dtd.reject();
+                }
+            },
+            error: function (a, b, c) {
+                dtd.reject();
+            }
+        });
+    } else {
+        var cs = [];
+        for (var i = 0; i < cIds.length; i++) {
+            cs.push(ConceptManager.getCachedConcept(cIds[i]));
+        }
+        dtd.resolve(cs);
+    }
+    return dtd.promise(); // 返回promise对象
 };
 
 /***Morpheme操作*****************************************************************************************************************************/
