@@ -686,25 +686,28 @@ StatementManager.prototype.findBySP = function (subject, stype, predicate, optio
     return dtd.promise();
 };
 StatementManager.prototype.findByPO = function (predicateId, objectId, oType, options) {
-    var defaults = {
-        appId: ''
-    };
     if (oType === undefined) oType = Nagu.MType.Concept;
     // Extend our default options with those provided.    
-    var opts = $.extend(defaults, options);
+    options = $.extend(Nagu.commonOption, options);
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
-    var cacheKey = StatementManager.generateCacheKey('', '', predicateId, objectId, opts.appId);
+    var cacheKey = StatementManager.generateCacheKey('', '', predicateId, objectId, options.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
-        $.post(this.host + "/MorphemeApi/FindByPO/" + predicateId,
-        {
-            otype: oType,
-            objectId: objectId,
-            appId: opts.appId
-        }).done(function (fss) {
-            StatementManager.StatementsCache[cacheKey] = fss;
-            dtd.resolve(fss);
-        }).fail(function () { dtd.reject(); });
+        $.ajax(options.host + "/MorphemeApi/FindByPO/" + predicateId, {
+            dataType: 'jsonp',
+            data: {
+                otype: oType,
+                objectId: objectId,
+                appId: options.appId
+            },
+            success: function (fss) {
+                StatementManager.StatementsCache[cacheKey] = fss;
+                dtd.resolve(fss);
+            },
+            error: function (a, b, c) {
+                dtd.reject();
+            }
+        });
     } else {
         dtd.resolve(StatementManager.StatementsCache[cacheKey]);
     }
