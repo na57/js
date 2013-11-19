@@ -1526,29 +1526,45 @@ ConceptDetailPanel.renderType4 = function (conceptId, placeHolder, typeFs, opts)
         // 4. 循环显示类型的每个属性
         var dl = newTag("dl").addClass('dl-horizontal').appendTo(placeHolder);
         propertyValuesFormBaseClass(opts.subjectId, Nagu.MType.Concept, opts.typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
-            $.each(pvs, function (i, pv) {
-                // 构建容器。dt: 属性, dd: 属性值
-                var dt = newDt().appendTo(dl);
-                var dd = newDd().attr('pvsFor', pv.Key).appendTo(dl);
+            var cIds = [];
+            for (var i = 0; i < pvs.length; i++) {
+                cIds.push(pvs[i].Key);
+                for (var j = 0; j < Math.min(pvs[i].Value.length, 5) ; j++) {
+                    if (pvs[i].Value.Subject.ConceptId
+                        && $.inArray(pvs[i].Value.Subject.ConceptId, cIds) != -1)
+                        cIds.push(pvs[i].Value.Subject.ConceptId);
+                    if (pvs[i].Value.Object.ConceptId
+                        && $.inArray(pvs[i].Value.Object.ConceptId, cIds) != -1)
+                        cIds.push(pvs[i].Value.Object.ConceptId);
+                }
+            }
+            // 首先批量获取所有属性概念，这样可以减少请求次数。
+            Nagu.CM.bulkGet(cIds).done(function (css) {
+                $.each(pvs, function (i, pv) {
+                    // 构建容器。dt: 属性, dd: 属性值
+                    var dt = newDt().appendTo(dl);
+                    var dd = newDd().attr('pvsFor', pv.Key).appendTo(dl);
 
-                // 显示属性:
-                opts.renderProperty(dt, pv.Key, conceptId, {
-                    valueAdded: function (fs) {
-                        var propertyId = fs.Predicate.ConceptId;
-                        Nagu.CM.getPropertyValues(conceptId, propertyId, {
-                            flush: true
-                        }).done(function (fss) {
-                            var pvdd = $('dd[pvsFor="' + pv.Key + '"]');
-                            opts.renderPropertyValues(pvdd, propertyId, fss, conceptId);
-                        });
-                    }
+                    // 显示属性:
+                    opts.renderProperty(dt, pv.Key, conceptId, {
+                        valueAdded: function (fs) {
+                            var propertyId = fs.Predicate.ConceptId;
+                            Nagu.CM.getPropertyValues(conceptId, propertyId, {
+                                flush: true
+                            }).done(function (fss) {
+                                var pvdd = $('dd[pvsFor="' + pv.Key + '"]');
+                                opts.renderPropertyValues(pvdd, propertyId, fss, conceptId);
+                            });
+                        }
+                    });
+
+                    // 显示属性值
+                    opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId);
+
+
                 });
-                
-                // 显示属性值
-                opts.renderPropertyValues(dd, pv.Key, pv.Value, conceptId);
-
-                
             });
+            
         });
     });
 };
