@@ -125,7 +125,8 @@ show: 指定用于显示属性和值得函数，不指定则默认以“dl”的
 */
 function renderPropertyValues(ph, subject, sType, type, show) {
     // 显示属性及值：
-    propertyValuesFormBaseClass(subject, sType, type).done(function (pvs) {
+    Nagu.CM.pvsFromType(subject,type).done(function(pvs){
+    //propertyValuesFormBaseClass(subject, sType, type).done(function (pvs) {
         ph.empty();
         $.each(pvs, function (i, pv) {
             if (show === undefined) onShowPropertyValue(ph, pv.Key, pv.Value);
@@ -1402,7 +1403,10 @@ ConceptDetailPanel.renderType2 = function (conceptId, placeHolder, typeFs, opts)
             renderBody: function (ph) {
                 // 4. 循环显示每个类型的属性
                 var dl = newTag("dl").addClass('dl-horizontal').appendTo(ph);
-                propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
+                Nagu.CM.pvsFromType(conceptId,typeFs.Object.ConceptId,{
+                    appId: opts.appId
+                }).done(function(pvs){
+                //propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
                     $.each(pvs, function (i, pv) {
                         var dt = newDt("dt_" + pv.Key).appendTo(dl);
 
@@ -1454,7 +1458,10 @@ ConceptDetailPanel.renderType3 = function (conceptId, placeHolder, typeFs, opts)
             renderBody: function (ph) {
                 // 4. 循环显示每个类型的属性
                 var dl = newTag("dl").addClass('dl-horizontal').appendTo(ph);
-                propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
+                Nagu.CM.pvsFromType(conceptId, typeFs.Object.ConceptId, {
+                    appId: opts.appId
+                }).done(function (pvs) {
+                //propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
                     $.each(pvs, function (i, pv) {
                         // 构建容器。dt: 属性, dd: 属性值
                         var dt = newDt().appendTo(dl);
@@ -1525,15 +1532,18 @@ ConceptDetailPanel.renderType4 = function (conceptId, placeHolder, typeFs, opts)
     Nagu.CM.get(typeFs.Object.ConceptId).done(function (type) {
         // 4. 循环显示类型的每个属性
         var dl = newTag("dl").addClass('dl-horizontal').appendTo(placeHolder);
-        propertyValuesFormBaseClass(opts.subjectId, Nagu.MType.Concept, opts.typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
+        Nagu.CM.pvsFromType(opts.subjectId, opts.typeFs.Object.ConceptId, {
+            appId: opts.appId
+        }).done(function (pvs) {
+        //propertyValuesFormBaseClass(opts.subjectId, Nagu.MType.Concept, opts.typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
             var cIds = [];
             for (var i = 0; i < pvs.length; i++) {
                 cIds.push(pvs[i].Key);
                 for (var j = 0; j < Math.min(pvs[i].Value.length, 5) ; j++) {
-                    if (pvs[i].Value.Subject.ConceptId
+                    if (pvs[i].Value.Subject && pvs[i].Value.Subject.ConceptId
                         && $.inArray(pvs[i].Value.Subject.ConceptId, cIds) != -1)
                         cIds.push(pvs[i].Value.Subject.ConceptId);
-                    if (pvs[i].Value.Object.ConceptId
+                    if (pvs[i].Value.Object && pvs[i].Value.Object.ConceptId
                         && $.inArray(pvs[i].Value.Object.ConceptId, cIds) != -1)
                         cIds.push(pvs[i].Value.Object.ConceptId);
                 }
@@ -1607,7 +1617,10 @@ ConceptDetailPanel.renderType1 = function (conceptId, placeHolder, typeFs) {
 
         // 4. 循环显示每个类型的属性
         var dl = newTag("dl").addClass("dl-horizontal").appendTo(div);
-        propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
+        Nagu.CM.pvsFromType(conceptId, typeFs.Object.ConceptId, {
+            appId: opts.appId
+        }).done(function (pvs) {
+        //propertyValuesFormBaseClass(conceptId, Nagu.MType.Concept, typeFs.Object.ConceptId, opts.appId).done(function (pvs) {
             $.each(pvs, function (i, pv) {
                 opts.renderPropertyAndValues(dl, pv.Key, pv.Value, conceptId, opts);
             });
@@ -2079,6 +2092,46 @@ SearchConceptDialog.prototype.hide = function () {
     $('#' + this.opts.dialogId).modal('hide');
 }
 
+
+/******* SelectAddressDialog 类 ******************************************************************************************************************/
+function SelectAddressDialog(options) {
+    var defaults = {
+        appId: "",
+        templateUrl: "/Apps/private/dialog/selectAddress.html",
+        dialogId: 'dlgSelectAddress' + randomInt(),
+        autoInit: true,
+        selected: function (address, appId) { }
+    };
+    // Extend our default options with those provided.    
+    this.opts = $.extend(defaults, options);
+    SelectAddressDialog.selected = this.opts.selected;
+
+    if (this.opts.autoInit) this.init();
+};
+
+SelectAddressDialog.prototype.init = function () {
+    // 如果页面中已经有一个dialogType为SelectAddress的对话框，则退出。
+    var dlgCount = $.grep($('.modal'), function (modal, i) {
+        return $(modal).data('dialogType') == 'SelectAddress';
+    });
+    if (dlgCount > 0) return;
+
+    // 以下变量声明不能删除,否则异步函数无法取值.
+    var dialogId = this.opts.dialogId;
+    return $.get(this.opts.templateUrl).done(function (html) {
+        html = html.replace(/{dlgSelectAddress}/g, dialogId);
+        $('body').append(html);
+    });
+};
+
+SelectAddressDialog.prototype.toggle = function (options) {
+    this.opts = $.extend(this.opts, options);
+    SelectAddressDialog.selected = this.opts.selected;
+
+    var div = $('#' + this.opts.dialogId);
+    div.find('h3').text(this.opts.h3);
+    div.modal('toggle');
+};
 
 /*******用于显示Concept的列表******************************************************************************************************************/
 

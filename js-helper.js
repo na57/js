@@ -90,3 +90,8 @@ function SerializeJsonToStr(oJson) {
         return strRet;
     }
 }
+
+function renderThisYear() {
+    var date = new Date();
+    document.write(1900 + date.getYear());
+}

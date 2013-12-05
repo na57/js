@@ -29,7 +29,8 @@ Nagu.Concepts = {
     Literal:            '26a11dbc-f50a-480e-9ff4-7106f1af3fcb',
     SystemTypeBag: '76b2ba52-0f0c-4a76-b899-65e921092c28',  // “系统预定义类型”包
     App: 'f1933904-6bac-425b-abf8-c5f4032a380f', // 描述“应用”的类,
-    HasInstancesProperty: '73858269-4f00-4b4f-bb70-905d2256e9a4' // 描述“实例包含的属性”的谓词
+    HasInstancesProperty: '73858269-4f00-4b4f-bb70-905d2256e9a4', // 描述“实例包含的属性”的谓词
+    Remark: '118efcc0-949a-4d6f-aa9d-64372eca9267'
 };
 
 Nagu.Article = {
@@ -69,13 +70,17 @@ Nagu.User = {
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 
 Nagu.hosts = [
-    'nagu.cc'
+    //'nagu.cc'
     //'api0.nagu.cc',
     //'api1.nagu.cc',
     //'api2.nagu.cc',
     //'api3.nagu.cc',
     //'api4.nagu.cc',
     //'api5.nagu.cc'
+    'ngapi.ynu.edu.cn'
+];
+Nagu.readOnlyHosts = [
+    'ngapi.ynu.edu.cn'
 ];
 
 Nagu.loggedHosts = [];
@@ -83,7 +88,7 @@ Nagu.loggedHosts = [];
 Nagu.commonOption = {
     saidBy: '',
     appId: '',
-    host: 'http://nagu.cc',
+    host: Nagu.hosts[0],
     flush: false,
     useLocalStorage: true,
     useCache: true,
@@ -253,7 +258,7 @@ ConceptManager.prototype.get = function (id, options) {
     if (options.flush) result = undefined;
 
     if (result === undefined || result == null) {
-        $.ajax(options.host + "/ConceptApi/Get/" + id, {
+        $.ajax('http://'+options.host + "/ConceptApi/Get/" + id, {
             dataType: 'jsonp',
             success: function (concept){
                 ConceptManager.setCachedConcept(concept);
@@ -272,33 +277,43 @@ ConceptManager.prototype.get = function (id, options) {
 }
 
 ConceptManager.prototype.create = function (fn, desc, options) {
-    var defaults = {
-        id: '',
-        appId: '',//"00000000-0000-0000-0000-000000000000",
-        typeId: ''
-    };
     // Extend our default options with those provided.    
-    var opts = $.extend(defaults, options);
+    var opts = $.extend(Nagu.commonOption, options);
 
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象    
     if (opts.id === undefined || opts.id == null || opts.id == "") {
-        $.post(this.host + "/ConceptApi/Create/", {
-            fn: fn,
-            desc: desc,
-            appId: opts.appId,
-            typeId: opts.typeId
-        }).done(function (c) {
-            //ConceptManager.ConceptCache[c.ConceptId] = c;
-            ConceptManager.setCachedConcept(c);
-            dtd.resolve(c);
-        }).fail(function () { alert('ConceptManager.create失败'); dtd.reject(); });
+        $.ajax('http://' + Nagu.loggedHosts[0] + "/ConceptApi/Create/", {
+            data: {
+                fn: fn,
+                desc: desc,
+                appId: opts.appId,
+                typeId: opts.typeId
+            },
+            dataType: 'jsonp',
+            success: function (c) {
+                ConceptManager.setCachedConcept(c);
+                dtd.resolve(c);
+            },
+            error: function (a, b, c) {
+                alert('ConceptManager.create失败'); dtd.reject();
+            }
+        });
     } else {
-        $.post(this.host + "/ConceptApi/Create/", { id: opts.id, fn: fn, desc: desc, appId: opts.appId }).done(function (c) {
-            //ConceptManager.ConceptCache[c.ConceptId] = c;
-            ConceptManager.setCachedConcept(c);
-            dtd.resolve(c);
-        }).fail(function () { dtd.reject(); });
+        $.ajax('http://' + Nagu.loggedHosts[0] + "/ConceptApi/Create/", {
+            data: {
+                id: opts.id,
+                fn: fn,
+                desc: desc,
+                appId: opts.appId
+            },
+            dataType: 'jsonp',
+            success: function (c) {
+                ConceptManager.setCachedConcept(c);
+                dtd.resolve(c);
+            },
+            error: function (a,b,c) { dtd.reject(); }
+        });
     }
     return dtd.promise(); // 返回promise对象
 };
@@ -372,18 +387,24 @@ ConceptManager.prototype.flush = function (conceptId) {
 }
 
 ConceptManager.prototype.getPropertiesAndValues = function (conceptId, options) {
-    var defaults = {
-        appId: ''
-    };
     // Extend our default options with those provided.    
-    var opts = $.extend(defaults, options);
+    var opts = $.extend(Nagu.commonOption, options);
 
-//    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象   
-    return $.post(host + '/MorphemeApi/GetPropertiesAndValues', {
-        subjectId: conceptId,
-        appId: opts.appId
+    var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象   
+    return $.ajax('http://'+ opts.host + '/MorphemeApi/GetPropertiesAndValues', {
+        dataType: 'jsonp',
+        data: {
+            subjectId: conceptId,
+            appId: opts.appId
+        },
+        success: function (pvs) {
+            dtd.resolve(pvs);
+        },
+        error: function (a, b, c) {
+            dtd.reject();
+        }
     });
-//    return dtd.promise();
+    return dtd.promise();
 };
 
 ConceptManager.prototype.addProperty = function (conceptId, propertyId, options) {
@@ -432,7 +453,7 @@ ConceptManager.prototype.getPropertyValues = function (conceptId, propertyId, op
     if (ConceptManager.PropertyAndValues[conceptId + propertyId] !== undefined)
         dtd.resolve(ConceptManager.PropertyAndValues[conceptId + propertyId]);
     else {
-        $.ajax(opts.host + "/MorphemeApi/GetPropertyValues/", {
+        $.ajax('http://' + opts.host + "/MorphemeApi/GetPropertyValues/", {
             dataType: 'jsonp',
             success: function (fss) {
                 ConceptManager.PropertyAndValues[conceptId + propertyId] = fss;
@@ -505,7 +526,7 @@ ConceptManager.prototype.pvsFromType = function (cid, typeId, options) {
     if (PvsFromBaseClass[cid] === undefined) PvsFromBaseClass[cid] = new Array();
     if (PvsFromBaseClass[cid][typeId] === undefined) {
 
-        $.ajax(opts.host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + cid, {
+        $.ajax('http://' + opts.host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + cid, {
             dataType: 'jsonp',
             success: function (pvs) {
                 PvsFromBaseClass[cid][typeId] = pvs;
@@ -530,7 +551,7 @@ ConceptManager.prototype.pvsFromType = function (cid, typeId, options) {
 
 ConceptManager.prototype.types = function (cid, options) {
     var dtd = $.Deferred();
-    $.ajax(Nagu.commonOption.host + '/morphemeApi/GetTypes/'+cid, {
+    $.ajax('http://' + Nagu.commonOption.host + '/morphemeApi/GetTypes/' + cid, {
         dataType: 'jsonp',
         success: function (data) {
             dtd.resolve(data);
@@ -554,7 +575,7 @@ ConceptManager.prototype.bulkGet = function (cIds, options) {
         return (result === undefined || result == null);
     });
     if (gettingIds.length > 0) {
-        $.ajax(options.host + "/ConceptApi/BulkGet/", {
+        $.ajax('http://' + options.host + "/ConceptApi/BulkGet/", {
             dataType: 'jsonp',
             data: {
                 ids: SerializeJsonToStr(gettingIds)
@@ -671,15 +692,22 @@ StatementManager.prototype.findBySP = function (subject, stype, predicate, optio
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey('', subject, predicate, '', opts.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
-        $.post(Nagu.commonOption.host + "/MorphemeApi/FindBySP/" + subject,
+        $.ajax('http://' + Nagu.commonOption.host + "/MorphemeApi/FindBySP/" + subject,
         {
-            stype: stype,
-            predicateId: predicate,
-            appId: opts.appId
-        }).done(function (fss) {
-            Statments[StatementManager.StatementsCache] = fss;
-            dtd.resolve(fss);
-        }).fail(function () { dtd.reject(); });
+            dataType: 'jsonp',
+            data: {
+                stype: stype,
+                predicateId: predicate,
+                appId: opts.appId
+            },
+            success: function (fss) {
+                Statments[StatementManager.StatementsCache] = fss;
+                dtd.resolve(fss);
+            },
+            error: function (a, b, c) {
+                dtd.reject();
+            }
+        });
     } else {
         dtd.resolve(Statments[StatementManager.StatementsCache]);
     }
@@ -693,7 +721,7 @@ StatementManager.prototype.findByPO = function (predicateId, objectId, oType, op
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey('', '', predicateId, objectId, options.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
-        $.ajax(options.host + "/MorphemeApi/FindByPO/" + predicateId, {
+        $.ajax('http://' + options.host + "/MorphemeApi/FindByPO/" + predicateId, {
             dataType: 'jsonp',
             data: {
                 otype: oType,
@@ -726,17 +754,22 @@ StatementManager.prototype.findBySPO = function (subjectId,  predicateId, object
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey('', subjectId, predicateId, objectId, opts.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
-        $.post(Nagu.commonOption.host + "/MorphemeApi/FindBySPO/" + subjectId,
+        $.ajax('http://' + Nagu.commonOption.host + "/MorphemeApi/FindBySPO/" + subjectId,
         {
-            stype: opts.stype,
-            predicateId: predicateId,
-            objectId: objectId,
-            otype: opts.otype,
-            appId: opts.appId
-        }).done(function (fss) {
-            Statments[StatementManager.StatementsCache] = fss;
-            dtd.resolve(fss);
-        }).fail(function () { dtd.reject(); });
+            data: {
+                stype: opts.stype,
+                predicateId: predicateId,
+                objectId: objectId,
+                otype: opts.otype,
+                appId: opts.appId
+            },
+            dataType: 'jsonp',
+            success: function (fss) {
+                Statments[StatementManager.StatementsCache] = fss;
+                dtd.resolve(fss);
+            },
+            error: function () { dtd.reject(); }
+        });
     } else {
         dtd.resolve(Statments[StatementManager.StatementsCache]);
     }
@@ -775,7 +808,7 @@ StatementManager.prototype.bulkCreate = function (fss, options) {
         if (fss[i].AppId == '') fss[i].AppId = Nagu.App.Public;
     }
     var dtd = $.Deferred();
-    $.ajax(Nagu.commonOption.host + '/statementApi/bulkCreate', {
+    $.ajax('http://' + Nagu.commonOption.host + '/statementApi/bulkCreate', {
         dataType: 'jsonp',
         success: function (data) {
             dtd.resolve(data);
@@ -863,7 +896,7 @@ MemberManager.Cache = new Array();
 MemberManager.prototype.getMe1 = function () {
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     if (MemberManager.me === undefined)
-        $.ajax(Nagu.commonOption.host + '/MemberApi/GetMe', {
+        $.ajax('http://' + Nagu.commonOption.host + '/MemberApi/GetMe', {
             dataType: 'jsonp',
             success: function (me) {
                 if (me.ret == 0) {
@@ -1374,5 +1407,32 @@ Nagu.F = {
         return $.jsonp({
             url: 'http://' + host + '/func/bulkWrap/?urls=' + encodeURIComponent(urls) + '&callback=?'
         });
+    },
+    shortenUrl: function (longUrl, costemName) {
+        var dtd = $.Deferred();
+        $.ajax('http://nagu.cc/ShortenUrlApi/Create', {
+            dataType: 'jsonp',
+            data: {
+                longUrl: longUrl,
+                costemName: costemName
+            },
+            success: function (data) {
+                if (data.ret == 0) {
+                    dtd.resolve(data);
+                } else {
+                    dtd.reject();
+                }
+            },
+            error: function(a,b,c){
+                dtd.reject();
+            },
+            type: 'post'
+        });
+        return dtd.promise();
+    },
+    
+    resetConfirmationCode: function (selector) {
+        var img = $(selector);
+        img.attr('src', 'http://' + Nagu.hosts[0] + '/home/confirmationCode/' + Math.random());
     }
 };
