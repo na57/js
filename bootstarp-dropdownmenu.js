@@ -175,26 +175,65 @@ MenuItem.TypeMIFunctions[Nagu.Contact.Class] = function (conceptId, options) {
 
     var mi = new MenuItem({
         text: '拨打首要号码',
-        click: function () {
-            if ($(this).data('phone-number')) {
-                window.open('tel://' + $(this).data('phone-number'));
-            }
-        },
+        //click: function () {
+        //    if ($(this).data('phone-number')) {
+        //        window.open('tel://' + $(this).data('phone-number'));
+        //    }
+        //},
         appended: function (li, a) {
             a.text('')
-                //.addClass('visible-phone')
+                .addClass('visible-phone')
                 .append(B.img().attr('src', '/Content/Images/loading-18.gif'));
-            Nagu.CM.getPropertyValues(conceptId, Nagu.Contact.PrimaryNum).done(function (fss) {
-                a.text('拨打首要号码')
-                for (var i = 0; i < fss.length; i++) {
-                    if (fss[i].Object.Value) {
-                        a.data('phone-number', fss[i].Object.Value);
-                        return;
+            //Nagu.CM.getPropertyValues(conceptId, Nagu.Contact.PrimaryNum).done(function (fss) {
+            //    a.text('拨打首要号码')
+            //    for (var i = 0; i < fss.length; i++) {
+            //        if (fss[i].Object.Value) {
+            //            a.data('phone-number', fss[i].Object.Value);
+            //            return;
+            //        }
+            //    }
+            //    a.unbind('click').click(function () {
+            //            alert('请先设置当前联系人的首要号码.');
+            //        });
+            //});
+            Nagu.CM.pvsFromType(conceptId, Nagu.Contact.Class).done(function (pvs) {
+                a.text('拨打电话');
+                var primaryNum, cellPhone, officeNum;
+                $.each(pvs, function (i, pv) {
+                    if(pv.Value.length == 0) return;
+                    switch (pv.Key) {
+                        case Nagu.Contact.PrimaryNum:
+                            for (var j = 0; j < pv.Value.length; j++) {
+                                primaryNum = pv.Value[j].Object.Value;
+                                break;
+                            }
+                            break;
+                        case Nagu.Contact.CellPhoneNum:
+                            for (var j = 0; j < pv.Value.length; j++) {
+                                cellPhone = pv.Value[j].Object.Value;
+                                break;
+                            }
+                            break;
+                        case Nagu.Contact.OfficeNum:
+                            for (var j = 0; j < pv.Value.length; j++) {
+                                officeNum = pv.Value[j].Object.Value;
+                                break;
+                            }
+                            break;
                     }
-                }
-                a.unbind('click').click(function () {
-                        alert('请先设置当前联系人的首要号码.');
-                    });
+                    if (primaryNum === undefined) {
+                        if (cellPhone) primaryNum = cellPhone;
+                        else if (officeNum) primaryNum = officeNum;
+                    }
+                    if (primaryNum) {
+                        a.data('phone-number', primaryNum);
+                        a.attr('href', 'tel://' + primaryNum);
+                    } else {
+                        a.click(function () {
+                            alert('请先设置当前联系人的电话号码.');
+                        });
+                    }
+                });
             });
             
         }

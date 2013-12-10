@@ -35,6 +35,8 @@ Nagu.Concepts = {
 
 Nagu.Contact = {
     Class: '5d9a1f44-ab0e-47e0-bb92-ba8b47f5aa42', // 类，联系人
+    CellPhoneNum: 'bd640461-41d2-4009-862e-0ebcd2d77b2c', // 谓词，手机号码
+    OfficeNum: '282c7749-1d94-41d2-afa0-45ca4e61b87d', // 谓词，办公号码
     PrimaryNum: '1044d41f-6c2e-4f4f-a2fb-0c6be306f18a' // 谓词，首要号码
 }
 
