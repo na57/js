@@ -182,6 +182,10 @@ SayManager.prototype.status = function (statementId) {
             success: function (data) {
                 SayManager.SaidCache[statementId] = data;
                 dtd.resolve(data);
+            },
+            error: function (a, b, c) {
+                dtd.reject();
+                log('SayM.status error');
             }
         });
     } else {
@@ -1442,7 +1446,11 @@ DialogManager.prototype.get = function (url) {
 
 
 function log(text) {
-    $('#txtDebug').val($('#txtDebug').val() + text + '\r\n');
+    //$('#txtDebug').val($('#txtDebug').val() + text + '\r\n');
+    try{
+        console.log(text);
+    } catch (e) {
+    }
 }
 
 
