@@ -63,6 +63,16 @@ B.h6 = function () { return $('<h6/>'); };
 B.img = function () { return $('<img/>'); };
 
 
+B.button = function () { return B.a().addClass('btn'); };
+B.btnPrimary = function () { return B.button().addClass('btn-primary'); };
+B.btnInfo = function () { return B.button().addClass('btn-info'); };
+B.btnSuccess = function () { return B.button().addClass('btn-success'); };
+B.btnWarning = function () { return B.button().addClass('btn-warning'); };
+B.btnDanger = function () { return B.button().addClass('btn-danger'); };
+B.btnInverse = function () { return B.button().addClass('btn-inverse'); };
+B.divBtnGroup = function () { return B.div().addClass('btn-group'); };
+
+
 B.divControlGroup = function () { return B.div().addClass('control-group'); };
 B.labelControlLabel = function () { return B.label().addClass('control-label'); };
 B.divControls = function () { return B.div().addClass('controls'); };
