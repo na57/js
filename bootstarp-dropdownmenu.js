@@ -95,7 +95,7 @@ MenuItem.getTypeMIs = function (conceptId, options) {
         Nagu.CM.get(conceptId).done(function (concept) {
             $.each(concept.TypeFss, function (i, typeFs) {
                 var typeId = typeFs.Object.ConceptId;
-                if (typeId == Nagu.Concepts.NaguConcept) return;
+                //if (typeId == Nagu.Concepts.NaguConcept) return;
 
                 if (MenuItem.TypeMIFunctions[typeId] !== undefined) {
                     var mi = MenuItem.TypeMIFunctions[typeId](conceptId, options);
@@ -104,10 +104,10 @@ MenuItem.getTypeMIs = function (conceptId, options) {
             });
 
             // 若当前Concept无任何特殊显示的类型，则添加默认菜单
-            if (mis.length == 0) {
-                var miGo = MenuItem.TypeMIFunctions[Nagu.Concepts.NaguConcept](conceptId);
-                mis.push(miGo);
-            }
+            //if (mis.length == 0) {
+            //    var miGo = MenuItem.TypeMIFunctions[Nagu.Concepts.NaguConcept](conceptId);
+            //    mis.push(miGo);
+            //}
             dtd.resolve(mis);
         }).fail(function () { dtd.resolve(mis) });
     }
@@ -115,11 +115,14 @@ MenuItem.getTypeMIs = function (conceptId, options) {
 };
 
 MenuItem.TypeMIFunctions = new Array();
+
+// 根据“概念”类型返回菜单项
 MenuItem.TypeMIFunctions[Nagu.Concepts.NaguConcept] = function(conceptId){
     var miGo = MenuItem.getDirectMI('详细信息', '/apps/public/concept.html?id=' + conceptId);
     return miGo;
 };
 
+// 根据“文章”类型返回菜单项
 MenuItem.TypeMIFunctions[Nagu.Concepts.Article] = function(conceptId, options){
     var defaults = {
         articleShowDialog: new ArticleShowDialog()
@@ -134,6 +137,7 @@ MenuItem.TypeMIFunctions[Nagu.Concepts.Article] = function(conceptId, options){
     });
 };
 
+// 根据“图片”类型返回菜单项
 MenuItem.TypeMIFunctions[Nagu.Concepts.NaguImage] = function (conceptId, options) {
     var defaults = {
         imageShowDialog: new ImageShowDialog()
@@ -148,6 +152,7 @@ MenuItem.TypeMIFunctions[Nagu.Concepts.NaguImage] = function (conceptId, options
     });
 };
 
+// 根据“包”类型返回菜单项
 MenuItem.TypeMIFunctions[Nagu.Rdf.Bag] = function (conceptId, options) {
     var defaults = {
         bagShowDialog: new BagShowDialog()
@@ -162,6 +167,40 @@ MenuItem.TypeMIFunctions[Nagu.Rdf.Bag] = function (conceptId, options) {
     });
 };
 
+// 根据“联系人”类型返回菜单项
+MenuItem.TypeMIFunctions[Nagu.Contact.Class] = function (conceptId, options) {
+    var defaults = {
+    };
+    var opts = $.extend(defaults, options);
+
+    var mi = new MenuItem({
+        text: '拨打首要号码',
+        click: function () {
+            if ($(this).data('phone-number')) {
+                window.open('tel://' + $(this).data('phone-number'));
+            }
+        },
+        appended: function (li, a) {
+            a.text('')
+                //.addClass('visible-phone')
+                .append(B.img().attr('src', '/Content/Images/loading-18.gif'));
+            Nagu.CM.getPropertyValues(conceptId, Nagu.Contact.PrimaryNum).done(function (fss) {
+                a.text('拨打首要号码')
+                for (var i = 0; i < fss.length; i++) {
+                    if (fss[i].Object.Value) {
+                        a.data('phone-number', fss[i].Object.Value);
+                        return;
+                    }
+                }
+                a.unbind('click').click(function () {
+                        alert('请先设置当前联系人的首要号码.');
+                    });
+            });
+            
+        }
+    });
+    return mi;
+};
 
 
 /******* Menu 类 ******************************************************************************************************************/

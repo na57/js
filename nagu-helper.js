@@ -30,8 +30,13 @@ Nagu.Concepts = {
     SystemTypeBag: '76b2ba52-0f0c-4a76-b899-65e921092c28',  // “系统预定义类型”包
     App: 'f1933904-6bac-425b-abf8-c5f4032a380f', // 描述“应用”的类,
     HasInstancesProperty: '73858269-4f00-4b4f-bb70-905d2256e9a4', // 描述“实例包含的属性”的谓词
-    Remark: '118efcc0-949a-4d6f-aa9d-64372eca9267'
+    Remark: '118efcc0-949a-4d6f-aa9d-64372eca9267' // 谓词，描述“备注”
 };
+
+Nagu.Contact = {
+    Class: '5d9a1f44-ab0e-47e0-bb92-ba8b47f5aa42', // 类，联系人
+    PrimaryNum: '1044d41f-6c2e-4f4f-a2fb-0c6be306f18a' // 谓词，首要号码
+}
 
 Nagu.Article = {
     Content: '6bef4f02-1d1d-4161-b017-0e9e4879883c',
