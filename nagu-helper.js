@@ -34,6 +34,10 @@ Nagu.Concepts = {
 };
 
 Nagu.Contact = {
+    Group: '468b71db-f689-47bd-b624-823daa918ecf', // 谓词，联系人群组
+    BelongsTo: '1ea23591-6d15-4dfb-b32d-3314f60a0a0b',
+    SubGroup: 'd5061aa6-c58d-4369-a8c0-9b7fa8825e67',
+    Email: '653a0707-2e03-4e93-937f-6168ddcc6723',
     Class: '5d9a1f44-ab0e-47e0-bb92-ba8b47f5aa42', // 类，联系人
     CellPhoneNum: 'bd640461-41d2-4009-862e-0ebcd2d77b2c', // 谓词，手机号码
     OfficeNum: '282c7749-1d94-41d2-afa0-45ca4e61b87d', // 谓词，办公号码
@@ -1342,7 +1346,9 @@ AppManager.prototype.create = function (fn, desc) {
 
 AppManager.prototype.del = function (appId) {
     var dtd = $.Deferred();
-    $.post(Nagu.commonOption.host + '/AppApi/Delete/' + appId).done(function (data) {
+    $.ajax('http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/Delete/' + appId, {
+        dataType:'jsonp'
+    }).done(function (data) {
         if (data.ret == 0) {
             dtd.resolve(data);
         } else dtd.reject(data);
@@ -1352,11 +1358,14 @@ AppManager.prototype.del = function (appId) {
 
 AppManager.prototype.addNewKey = function (appId, fn, desc, auth, expire) {
     var dtd = $.Deferred();
-    $.post(Nagu.commonOption.host + '/AppApi/AddKey/'+appId, {
-        fn: fn,
-        desc: desc,
-        auth: auth,
-        expire: expire
+    $.ajax('http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/AddKey/' + appId, {
+        dataType: 'jsonp',
+        data: {
+            fn: fn,
+            desc: desc,
+            auth: auth,
+            expire: expire
+        }
     }).done(function (key) {
         dtd.resolve(key);
     });
@@ -1365,8 +1374,11 @@ AppManager.prototype.addNewKey = function (appId, fn, desc, auth, expire) {
 
 AppManager.prototype.addKey = function (appId, keyId) {
     var dtd = $.Deferred();
-    $.post(Nagu.commonOption.host + '/AppApi/AddKey/' + appId, {
-        keyId:keyId
+    $.ajax('http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/AddKey/' + appId, {
+        dataType: 'jsonp',
+        data: {
+            keyId: keyId
+        }
     }).done(function (key) {
         dtd.resolve(key);
     });
@@ -1379,12 +1391,16 @@ AppManager.prototype.keys = function (appId) {
 
     // 根据指定的AppId获取Key
     if (appId !== undefined) {
-        $.post(Nagu.commonOption.host + '/AppApi/ListKeys/' + appId).done(function (keys) {
+        $.ajax('http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/ListKeys/' + appId, {
+            dataType: 'jsonp'
+        }).done(function (keys) {
             dtd.resolve(keys);
         });
     // 获取当前用户所管理的所有App的Key
     } else {
-        $.post(Nagu.commonOption.host + '/AppApi/AllKeys/').done(function (keys) {
+        $.ajax('http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/AllKeys/', {
+            dataType: 'jsonp'
+        }).done(function (keys) {
             dtd.resolve(keys);
         });
     }
@@ -1393,7 +1409,9 @@ AppManager.prototype.keys = function (appId) {
 
 AppManager.prototype.getKey = function (keyId) {
     var dtd = $.Deferred();
-    $.post(Nagu.commonOption.host + '/AppApi/GetKey/' + keyId).done(function (key) {
+    $.ajax('http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/GetKey/' + keyId, {
+        dataType: 'jsonp'
+    }).done(function (key) {
         dtd.resolve(key);
     });
     return dtd.promise();
@@ -1401,9 +1419,12 @@ AppManager.prototype.getKey = function (keyId) {
 
 AppManager.prototype.deleteKey = function (appId, keyId) {
     var dtd = $.Deferred();
-    $.post(Nagu.commonOption.host + '/AppApi/DeleteKey/', {
-        appId: appId,
-        keyId: keyId
+    $.ajax('http://' + Nagu.loggedHosts[Math.round(Math.random() * (Nagu.loggedHosts.length - 1))] + '/AppApi/DeleteKey/', {
+        dataType: 'jsonp',
+        data: {
+            appId: appId,
+            keyId: keyId
+        }
     }).done(function (data) {
         dtd.resolve(data);
     });
