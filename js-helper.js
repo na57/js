@@ -95,3 +95,16 @@ function renderThisYear() {
     var date = new Date();
     document.write(1900 + date.getYear());
 }
+
+// 去除数组中的重复元素
+Array.prototype.distinct = function () {
+    var b = [];
+    var obj = {};
+    for (var i = 0; i < this.length; i++) {
+        obj[this[i]] = this[i];
+    }
+    for (var a in obj) {
+        b.push(obj[a]);
+    }
+    return b;
+};
