@@ -635,7 +635,8 @@ ConceptManager.prototype.bulkGet = function (cIds, options) {
         $.ajax('http://' + options.host + "/ConceptApi/BulkGet/", {
             dataType: 'jsonp',
             data: {
-                ids: SerializeJsonToStr(gettingIds)
+                ids: SerializeJsonToStr(gettingIds),
+                keys: SerializeJsonToStr(options.keys)
             },
             success: function (cs) {
                 if (cs.ret == 0) {
@@ -795,7 +796,8 @@ StatementManager.prototype.findByPO = function (predicateId, objectId, oType, op
             data: {
                 otype: oType,
                 objectId: objectId,
-                appId: options.appId
+                appId: options.appId,
+                keys: SerializeJsonToStr(options.keys)
             },
             success: function (fss) {
                 StatementManager.StatementsCache[cacheKey] = fss;
