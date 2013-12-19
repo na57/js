@@ -178,7 +178,7 @@ MenuItem.TypeMIFunctions[Nagu.Contact.Class] = function (conceptId, options) {
         appended: function (li, a) {
             a.text('')
                 .addClass('visible-phone')
-                .append(B.img().attr('src', '/Content/Images/loading-18.gif'));
+                .append(B.img().attr('src', 'http://nagucdn.sinaapp.com/Content/Images/loading-18.gif'));
 
             // 获取当前联系人的属性及值
             Nagu.CM.pvsFromType(conceptId, Nagu.Contact.Class).done(function (pvs) {

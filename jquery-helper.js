@@ -30,7 +30,7 @@ function newImg(src) {
 }
 
 function loadingImg() {
-    var img = newImg('/Content/Images/loading-18.gif');
+    var img = newImg('http://nagucdn.sinaapp.com/Content/Images/loading-18.gif');
     return img.addClass('nagu-loading-img');
 }
 

@@ -221,19 +221,19 @@ $.fn.appendMorpheme = function (morpheme, options) {
 };
 
 $.fn.appendConcept = function (cid, options) {
-    //var ph = $(this);
     var defaults = {
         appended: function (cid, a) { },
         container: B.a().appendTo($(this))
     }
     options = $.extend(defaults, options);
     
-    var a = options.container.append(loadingImg());//.appendTo(ph);
-    a.attr('conceptId', cid)
+    var a = options.container.append(loadingImg());
+
+    a.attr('conceptId', cid);
     return Nagu.CM.get(cid).done(function (c) {
         a.text(c.FriendlyNames[0]).attr('title', c.Descriptions[0]);
         a.val(c.FriendlyNames[0]);
-        options.appended(cid, a);
+        options.appended(c.ConceptId, a);
     }).fail(function () { a.text('数据加载失败'); a.val('数据加载失败'); });
 };
 
