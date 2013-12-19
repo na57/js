@@ -583,6 +583,7 @@ ConceptManager.prototype.pvsFromType = function (cid, typeId, options) {
     if (PvsFromBaseClass[cid] === undefined) PvsFromBaseClass[cid] = new Array();
     if (PvsFromBaseClass[cid][typeId] === undefined) {
 
+        var keys = SerializeJsonToStr(options.keys) == '""' ? '' : SerializeJsonToStr(options.keys);
         $.ajax('http://' + opts.host + "/MorphemeApi/GetPropertyValuesFormBaseClass/" + cid, {
             dataType: 'jsonp',
             success: function (pvs) {
@@ -597,7 +598,8 @@ ConceptManager.prototype.pvsFromType = function (cid, typeId, options) {
                 subject: cid,
                 mtype: Nagu.MType.Concept,
                 rdfType: typeId,
-                appId: opts.appId
+                appId: opts.appId,
+                keys: keys
             }
         });
     } else {
@@ -632,11 +634,12 @@ ConceptManager.prototype.bulkGet = function (cIds, options) {
         return (result === undefined || result == null);
     });
     if (gettingIds.length > 0) {
+        var keys = SerializeJsonToStr(options.keys) == '""' ? '' : SerializeJsonToStr(options.keys);
         $.ajax('http://' + options.host + "/ConceptApi/BulkGet/", {
             dataType: 'jsonp',
             data: {
                 ids: SerializeJsonToStr(gettingIds),
-                keys: SerializeJsonToStr(options.keys)
+                keys: keys
             },
             success: function (cs) {
                 if (cs.ret == 0) {
@@ -791,13 +794,14 @@ StatementManager.prototype.findByPO = function (predicateId, objectId, oType, op
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
     var cacheKey = StatementManager.generateCacheKey('', '', predicateId, objectId, options.appId);
     if (StatementManager.StatementsCache[cacheKey] === undefined) {
+        var keys = SerializeJsonToStr(options.keys) == '""' ? '' : SerializeJsonToStr(options.keys);
         $.ajax('http://' + options.host + "/MorphemeApi/FindByPO/" + predicateId, {
             dataType: 'jsonp',
             data: {
                 otype: oType,
                 objectId: objectId,
                 appId: options.appId,
-                keys: SerializeJsonToStr(options.keys)
+                keys: keys
             },
             success: function (fss) {
                 StatementManager.StatementsCache[cacheKey] = fss;
