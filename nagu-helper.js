@@ -78,6 +78,18 @@ Nagu.User = {
     HasPicture: '64e11d2c-5ee3-4d22-ac8c-0043d8c69263'
 };
 
+Nagu.Jiapu = {
+    JiazuClass: '796fb149-fd45-48af-92da-6a5aad1b1cbf', // 家族类
+    JiazuChengyuanClass: "d419ca8c-257f-4830-96b8-324e51a1d15b", // 家族成员类
+    HasFather: "6235da69-f802-4e4c-8eab-866bf1daf653",  // "父亲"谓词的ID：
+    HasMother: "762ee3bd-f14b-4253-a05e-d9b6782911c3",  // “母亲”谓词的ID
+    Gender: "6edc6734-4d59-4f97-a877-87a58777f45a",     // “性别”谓词的Id
+    BirthYear: "9ed1afef-a804-417c-a528-3d27d457db17",  // “出生年份”谓词的ID
+    SuoZaiJiaZu: "65299f7f-18a5-403a-a555-3dc726749991", // “所在家族”谓词的ID
+    Male: "96dd894c-a6da-4562-b9e9-f85fcca96463",
+    Female: "abcc829a-0a02-412b-9dc4-3ed259b1894a"
+};
+
 Nagu.PublicApp = '00000000-0000-0000-0000-000000000000';
 
 Nagu.hosts = [
@@ -424,11 +436,8 @@ ConceptManager.prototype.addConceptPv = function (subject, propertyId, objectId,
 
 // 为Concept添加一个类型为Literal的属性值
 ConceptManager.prototype.addLiteralPropertyValue = function (subject, propertyId, object, options) {
-    var defaults = {
-        appId: "00000000-0000-0000-0000-000000000000"
-    };
     // Extend our default options with those provided.    
-    var opts = $.extend(defaults, options);
+    var opts = $.extend(Nagu.commonOption, options);
 
     var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象   
     var sm = new StatementManager();
@@ -912,7 +921,18 @@ StatementManager.prototype.get = function (id) {
     return dtd.promise();
 };
 
-
+// 从语句集合中取出所有语句的主语ID
+StatementManager.prototype.subjectIds = function (fss) {
+    var cIds = [];
+    $.each(fss, function (i, fs) {
+        if (fs.Subject.ConceptId) {
+            cIds.push(fs.Subject.ConceptId);
+        } else if (fs.Subject.StatementId) {
+            cIds.push(fs.Subject.StatementId);
+        }
+    });
+    return cIds.distinct();
+}
 
 function pagedByPO(predicateId, objectId, otype, start, count) {
     return $.getJSON("/StatementApi/PagedByPO/" + predicateId,
